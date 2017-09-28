@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/kingsfamiliy.server.iml" filepath="$PROJECT_DIR$/.idea/modules/kingsfamiliy.server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/kingsfamiliy.server_main.iml" filepath="$PROJECT_DIR$/.idea/modules/kingsfamiliy.server_main.iml" group="kingsfamiliy.server" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/kingsfamiliy.server_test.iml" filepath="$PROJECT_DIR$/.idea/modules/kingsfamiliy.server_test.iml" group="kingsfamiliy.server" />
+    </modules>
+  </component>
+</project>
