@@ -15,10 +15,11 @@ dependencies {
     compile 'org.slf4j:slf4j-api:1.7.22'
     compile 'ch.qos.logback:logback-core:1.1.8'
     compile 'ch.qos.logback:logback-classic:1.1.8'
-    // https://mvnrepository.com/artifact/org.hibernate/hibernate-gradle-plugin
-    compile group: 'org.hibernate', name: 'hibernate-gradle-plugin', version: '5.2.11.Final'
-// https://mvnrepository.com/artifact/org.javassist/javassist
-    compile group: 'org.javassist', name: 'javassist', version: '3.22.0-CR2'
+// https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
+    compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.16.1'
+    compile 'com.esotericsoftware:kryo:4.0.1'
+
+
 
     compile files ('D:/Bibliotheken/AndroidStudioProjects/Utilties/tcpcommunication/build/libs/tcpcommunication.jar')
     compile files('D:/Bibliotheken/AndroidStudioProjects/Kingsfamily/commonfamily/build/libs/commonfamily.jar')
