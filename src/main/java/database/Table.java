@@ -1,12 +1,13 @@
 package database;
 
+import com.koenig.commonModel.Item;
 import org.joda.time.DateTime;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class Table<T> {
+public abstract class Table<T extends Item> {
     public static final String COLUMN_INSERT_DATE = "insert_date";
     public static final String COLUMN_MODIFIED_DATE = "modified_date";
     public static final String COLUMN_ID = "id";
@@ -79,28 +80,22 @@ public abstract class Table<T> {
         return users;
     }
 
-    private DatabaseItem<T> resultToItem(ResultSet rs) throws SQLException {
-        int id = rs.getInt(COLUMN_ID);
+    public static String getNamedParameter(String parameter) {
+        return parameter + " = :" + parameter;
+    }
+
+    protected abstract T getItem(ResultSet rs) throws SQLException;
+
+    protected DatabaseItem<T> resultToItem(ResultSet rs) throws SQLException {
+        String id = rs.getString(COLUMN_ID);
         boolean deleted = getBool(rs, COLUMN_DELETED);
         DateTime insertDate = getDateTime(rs, COLUMN_INSERT_DATE);
         DateTime lastModifiedDate = getDateTime(rs, COLUMN_MODIFIED_DATE);
         String insertId = rs.getString(COLUMN_INSERT_ID);
         String modifiedId = rs.getString(COLUMN_MODIFIED_ID);
-        return new DatabaseItem<T>(getItem(rs), id, insertDate, lastModifiedDate, deleted, insertId, modifiedId);
-    }
-
-    protected abstract T getItem(ResultSet rs) throws SQLException;
-
-    private String buildCreateStatement() {
-        return "CREATE TABLE " + getTableName() + " (" +
-                COLUMN_ID + " STRING PRIMARY KEY, " +
-                COLUMN_DELETED + " INT, " +
-                COLUMN_INSERT_DATE + " LONG, " +
-                COLUMN_INSERT_ID + " TEXT, " +
-                COLUMN_MODIFIED_DATE + " LONG, " +
-                COLUMN_MODIFIED_ID + " TEXT" +
-                getTableSpecificCreateStatement() +
-                ");";
+        T item = getItem(rs);
+        item.setId(id);
+        return new DatabaseItem<T>(item, insertDate, lastModifiedDate, deleted, insertId, modifiedId);
     }
 
     /**
@@ -111,19 +106,16 @@ public abstract class Table<T> {
      */
     protected abstract String getTableSpecificCreateStatement();
 
-    public void add(DatabaseItem<T> databaseItem) throws SQLException {
-        NamedParameterStatement ps = new NamedParameterStatement(connection, "insert into " + getTableName() +
-                "(" + COLUMN_ID + ", " + COLUMN_DELETED + ", " + COLUMN_INSERT_DATE + ", " + COLUMN_INSERT_ID + ", " + COLUMN_MODIFIED_DATE + ", " + COLUMN_MODIFIED_ID + getNamesOfSpecificParameter() + ") " +
-                " values(:" + COLUMN_ID + ", :" + COLUMN_DELETED + ", :" + COLUMN_INSERT_DATE + ", :" + COLUMN_INSERT_ID + ", :" + COLUMN_MODIFIED_DATE + ", :" + COLUMN_MODIFIED_ID +
-                getNamesOfSpecificParameterWithColon() + ")");
-        setDateTime(ps, COLUMN_MODIFIED_DATE, databaseItem.lastModifiedDate);
-        setDateTime(ps, COLUMN_INSERT_DATE, databaseItem.insertDate);
-        ps.setString(COLUMN_INSERT_ID, databaseItem.insertId);
-        ps.setString(COLUMN_MODIFIED_ID, databaseItem.lastModifiedId);
-        ps.setLong(COLUMN_ID, databaseItem.getId());
-        setBool(ps, COLUMN_DELETED, databaseItem.isDeleted());
-        setItem(ps, databaseItem.item);
-        ps.executeUpdate();
+    private String buildCreateStatement() {
+        return "CREATE TABLE " + getTableName() + " (" +
+                COLUMN_ID + " TEXT PRIMARY KEY, " +
+                COLUMN_DELETED + " INT, " +
+                COLUMN_INSERT_DATE + " LONG, " +
+                COLUMN_INSERT_ID + " TEXT, " +
+                COLUMN_MODIFIED_DATE + " LONG, " +
+                COLUMN_MODIFIED_ID + " TEXT" +
+                getTableSpecificCreateStatement() +
+                ");";
     }
 
     protected void setDateTime(NamedParameterStatement ps, String columnName, DateTime date) throws SQLException {
@@ -139,4 +131,38 @@ public abstract class Table<T> {
     protected abstract String getNamesOfSpecificParameterWithColon();
 
     protected abstract String getNamesOfSpecificParameter();
+
+    public void add(DatabaseItem<T> databaseItem) throws SQLException {
+        NamedParameterStatement ps = new NamedParameterStatement(connection, "insert into " + getTableName() +
+                "(" + COLUMN_ID + ", " + COLUMN_DELETED + ", " + COLUMN_INSERT_DATE + ", " + COLUMN_INSERT_ID + ", " + COLUMN_MODIFIED_DATE + ", " + COLUMN_MODIFIED_ID + getNamesOfSpecificParameter() + ") " +
+                " values(:" + COLUMN_ID + ", :" + COLUMN_DELETED + ", :" + COLUMN_INSERT_DATE + ", :" + COLUMN_INSERT_ID + ", :" + COLUMN_MODIFIED_DATE + ", :" + COLUMN_MODIFIED_ID +
+                getNamesOfSpecificParameterWithColon() + ")");
+        setDateTime(ps, COLUMN_MODIFIED_DATE, databaseItem.lastModifiedDate);
+        setDateTime(ps, COLUMN_INSERT_DATE, databaseItem.insertDate);
+        ps.setString(COLUMN_INSERT_ID, databaseItem.insertId);
+        ps.setString(COLUMN_MODIFIED_ID, databaseItem.lastModifiedId);
+        ps.setString(COLUMN_ID, databaseItem.getId());
+        setBool(ps, COLUMN_DELETED, databaseItem.isDeleted());
+        setItem(ps, databaseItem.item);
+        ps.executeUpdate();
+    }
+
+    public DatabaseItem<T> getDatabaseItemFromId(String id) throws SQLException {
+        DatabaseItem<T> item = null;
+        String selectQuery = "SELECT * FROM " + getTableName() + " WHERE " + COLUMN_DELETED + " = :" + COLUMN_DELETED + " AND " + COLUMN_ID + " = :" + COLUMN_ID;
+
+        NamedParameterStatement statement = new NamedParameterStatement(connection, selectQuery);
+        statement.setInt(COLUMN_DELETED, FALSE);
+        statement.setString(COLUMN_ID, id);
+        ResultSet rs = statement.executeQuery();
+        while (rs.next()) {
+            item = resultToItem(rs);
+        }
+
+        return item;
+    }
+
+    public T getFromId(String id) throws SQLException {
+        return getDatabaseItemFromId(id).item;
+    }
 }

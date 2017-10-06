@@ -1,22 +1,21 @@
 package database;
 
+import com.koenig.commonModel.Item;
 import org.joda.time.DateTime;
 
 /**
  * Created by Thomas on 24.11.2015.
  */
-public class DatabaseItem<T> {
+public class DatabaseItem<T extends Item> {
     protected T item;
     protected boolean deleted;
-    protected long id;
     protected DateTime insertDate;
     protected DateTime lastModifiedDate;
     protected String lastModifiedId;
     protected String insertId;
 
-    public DatabaseItem(T item, long id, DateTime insertDate, DateTime lastModified, boolean deleted, String insertId, String lastModifiedId) {
+    public DatabaseItem(T item, DateTime insertDate, DateTime lastModified, boolean deleted, String insertId, String lastModifiedId) {
         this.item = item;
-        this.id = id;
         this.insertDate = insertDate;
         this.lastModifiedDate = lastModified;
         this.deleted = deleted;
@@ -24,20 +23,21 @@ public class DatabaseItem<T> {
         this.lastModifiedId = lastModifiedId;
     }
 
-    public DatabaseItem(T item, long id, String insertId, String lastModifiedId) {
-        this(item, id, DateTime.now(), DateTime.now(), insertId, lastModifiedId);
-    }
-
     public DatabaseItem(T item, String insertId, String lastModifiedId) {
-        this(item, 0, DateTime.now(), DateTime.now(), insertId, lastModifiedId);
+        this(item, DateTime.now(), DateTime.now(), insertId, lastModifiedId);
     }
 
-    public DatabaseItem(T item, long id, DateTime insertDate, DateTime lastModifiedDate, String insertId, String lastModifiedId) {
-        this(item, id, insertDate, lastModifiedDate, false, insertId, lastModifiedId);
+    public DatabaseItem(T item, DateTime insertDate, DateTime lastModifiedDate, String insertId, String lastModifiedId) {
+        this.item = item;
+        this.insertDate = insertDate;
+        this.lastModifiedDate = lastModifiedDate;
+        this.deleted = false;
+        this.insertId = insertId;
+        this.lastModifiedId = lastModifiedId;
     }
 
-    public DatabaseItem(T user, String id) {
-        this(user, id, id);
+    public DatabaseItem(T item, String id) {
+        this(item, id, id);
     }
 
     public boolean isDeleted() {
@@ -52,7 +52,7 @@ public class DatabaseItem<T> {
     public String toString() {
         return "DatabaseItem{" +
                 "deleted=" + deleted +
-                ", id=" + id +
+                ", id=" + item.getId() +
                 ", insertDate=" + insertDate +
                 ", lastModifiedDate=" + lastModifiedDate +
                 ", lastModifiedId='" + lastModifiedId + '\'' +
@@ -60,13 +60,7 @@ public class DatabaseItem<T> {
                 '}';
     }
 
-    public long getId() {
-        return id;
-    }
 
-    public void setId(int id) {
-        this.id = id;
-    }
 
     public DateTime getInsertDate() {
         return insertDate;
@@ -100,4 +94,7 @@ public class DatabaseItem<T> {
         this.lastModifiedId = lastModifiedId;
     }
 
+    public String getId() {
+        return item.getId();
+    }
 }

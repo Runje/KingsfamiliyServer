@@ -1,11 +1,13 @@
 package database;
 
+import com.koenig.commonModel.Family;
 import com.koenig.commonModel.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 
 public class UserDatabase {
@@ -13,6 +15,7 @@ public class UserDatabase {
     private Connection connection;
 
     private UserTable userTable;
+    private FamilyTable familyTable;
 
     public UserDatabase(Connection connection) {
         this.connection = connection;
@@ -20,9 +23,15 @@ public class UserDatabase {
 
     public void start() throws SQLException {
         userTable = new UserTable(connection);
+        familyTable = new FamilyTable(connection, userTable);
         if (!userTable.isExisting()) {
-            logger.info("Creating user database");
+            logger.info("Creating user table");
             userTable.create();
+        }
+
+        if (!familyTable.isExisting()) {
+            logger.info("Creating family table");
+            familyTable.create();
         }
     }
 
@@ -40,5 +49,27 @@ public class UserDatabase {
         return userTable.ToItemList(userTable.getAll());
     }
 
+    public void addFamily(Family family, String id) throws SQLException {
+        DatabaseItem<Family> databaseItem = new DatabaseItem<>(family, id);
+        familyTable.add(databaseItem);
+    }
 
+    public List<Family> getAllFamilys() throws SQLException {
+        return familyTable.ToItemList(familyTable.getAll());
+    }
+
+    public void addUserToFamily(String familyName, User user) throws SQLException {
+        familyTable.addUserToFamily(familyTable.getFamilyByName(familyName), user.getId());
+    }
+
+
+    public void deleteAll() throws SQLException {
+        String query = "DELETE FROM " + userTable.getTableName();
+        Statement statement = connection.createStatement();
+        statement.execute(query);
+
+        query = "DELETE FROM " + familyTable.getTableName();
+        statement = connection.createStatement();
+        statement.execute(query);
+    }
 }

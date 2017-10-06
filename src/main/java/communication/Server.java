@@ -47,16 +47,17 @@ public class Server extends SocketChannelTCPServer implements OnReceiveBytesFrom
         logger.info("Receive bytes: " + bytes.length);
         FamilyMessage msg = Parser.parse(ByteBuffer.wrap(bytes));
         String name = msg.getName();
-
+        Client client = findClient(socketChannel);
+        client.id = msg.getFromId();
         switch(name) {
             case TextMessage.NAME:
                 String text = ((TextMessage) msg).getText();
                 if (text.equals(Commands.LOGIN)) {
                     logger.info("Login");
-                    Client client = findClient(socketChannel);
+
                     String[] words = text.split(" ");
                     client.name = words[1];
-                    client.id = msg.getFromId();
+
                     sendMessage(new TextMessage(Commands.LOGIN_SUCCESS), msg.getFromId());
                 }
                 break;

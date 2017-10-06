@@ -1,5 +1,7 @@
 package model;
 
+import com.koenig.commonModel.Family;
+import com.koenig.commonModel.User;
 import com.koenig.communication.Commands;
 import com.koenig.communication.ConnectUtils;
 import com.koenig.communication.messages.FamilyMessage;
@@ -7,31 +9,23 @@ import com.koenig.communication.messages.TextMessage;
 import communication.OnReceiveMessageListener;
 import communication.Server;
 import database.UserDatabase;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.List;
 
 public class FamilyModel implements OnReceiveMessageListener {
-    private static final String DB_NAME = "familyUsers.sqlite";
+
     private Logger logger = LoggerFactory.getLogger(getClass().getSimpleName());
     private Server server;
     private String FamilyFile = "familys.txt";
     private UserDatabase database;
 
-    public void start() throws SQLException {
+    public void start(UserDatabase userDatabase) throws SQLException {
         logger.info("Start");
-        // create a database connection
-        Connection connection = DriverManager.getConnection("jdbc:sqlite:" + DB_NAME);
-        database = new UserDatabase(connection);
+        database = userDatabase;
+
         database.start();
         server = new Server(ConnectUtils.PORT, this);
         server.start();
@@ -55,13 +49,14 @@ public class FamilyModel implements OnReceiveMessageListener {
     }
 
     private void processCommands(String text, String fromId) {
-        String[] words = text.split(" ");
+        String[] words = text.split(FamilyMessage.SEPARATOR);
         switch (words[0]) {
             case Commands.CREATE_FAMILY:
                 String familyName = words[1];
                 String userName = words[2];
                 logger.info("Creating new family: " + familyName);
                 createNewFamily(familyName, userName, fromId);
+                logger.info("Created new family: " + familyName);
                 break;
 
             default:
@@ -70,43 +65,31 @@ public class FamilyModel implements OnReceiveMessageListener {
         }
     }
 
-    private void createNewFamily(String familyName, String userName, String id) {
+    private void createNewFamily(String familyName, String userName, String userId) {
         try {
-            List<String> lines = Files.readAllLines(Paths.get(FamilyFile));
-            for (String line:lines) {
-                if (line.equals(familyName)) {
-                    logger.error("Family already exists");
-                    // TODO: Use other name
-                    server.sendMessage(new TextMessage(Commands.CREATE_FAMILY_FAIL), id);
-                    server.sendMessage(new TextMessage(Commands.CREATE_USER_FAIL), id);
-                    return;
-                }
+            // check if family already exists, name must be unique
+            database.addFamily(new Family(familyName), userId);
+            // TODO: create file database for each new family
+            joinFamily(familyName, userName, userId);
 
-            }
-
-            try(  BufferedWriter out = new BufferedWriter( new FileWriter(FamilyFile, true )  )){
-                out.write(familyName);
-            }
-
-            server.sendMessage(new TextMessage(Commands.CREATE_FAMILY_SUCCESS), id);
-            CreateFamily(familyName);
-            joinFamily(familyName, userName, id);
-        } catch (IOException e) {
-            logger.error("Couldn't read family file");
-            server.sendMessage(new TextMessage(Commands.CREATE_FAMILY_FAIL), id);
-            server.sendMessage(new TextMessage(Commands.CREATE_USER_FAIL), id);
-            return;
+        } catch (SQLException e) {
+            logger.error("Couldn't add family" + e.getMessage());
+            server.sendMessage(new TextMessage(Commands.CREATE_FAMILY_FAIL), userId);
         }
-
-
     }
 
-    private void CreateFamily(String familyName) {
-        // TODO: create file database for each new family
-    }
-
-    private void joinFamily(String familyName, String userName, String id) {
+    private void joinFamily(String familyName, String userName, String userId) {
         // TODO: check if user already exists in this family
         // TODO: add user to family. if first then its the admin
+        // TODO: Birthday
+        try {
+            User user = new User(userId, userName, familyName, DateTime.now());
+            database.addUser(user, userId);
+            database.addUserToFamily(familyName, user);
+            server.sendMessage(new TextMessage(Commands.CREATE_USER_SUCCESS), userId);
+        } catch (SQLException e) {
+            logger.error("Couldn't add user to family: " + e.getMessage());
+            server.sendMessage(new TextMessage(Commands.CREATE_USER_FAIL), userId);
+        }
     }
 }
