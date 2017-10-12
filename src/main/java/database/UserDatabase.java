@@ -58,8 +58,14 @@ public class UserDatabase {
         return familyTable.ToItemList(familyTable.getAll());
     }
 
-    public void addUserToFamily(String familyName, User user) throws SQLException {
-        familyTable.addUserToFamily(familyTable.getFamilyByName(familyName), user.getId());
+    public void addUserToFamily(String familyName, String userId) throws SQLException {
+
+        Family family = familyTable.getFamilyByName(familyName);
+        if (family == null) {
+            throw new SQLException("Family does not exist");
+        }
+
+        familyTable.addUserToFamily(family, userId);
     }
 
 
@@ -71,5 +77,9 @@ public class UserDatabase {
         query = "DELETE FROM " + familyTable.getTableName();
         statement = connection.createStatement();
         statement.execute(query);
+    }
+
+    public Family getFamilyByName(String familyName) throws SQLException {
+        return familyTable.getFamilyByName(familyName);
     }
 }

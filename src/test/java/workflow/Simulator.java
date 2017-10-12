@@ -95,4 +95,8 @@ public class Simulator extends SocketChannelTCPClient implements OnConnectionCha
             connectionEventListener.onReceiveMessage(msg);
         }
     }
+
+    public String getId() {
+        return fromId;
+    }
 }

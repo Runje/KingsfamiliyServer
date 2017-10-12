@@ -163,6 +163,11 @@ public abstract class Table<T extends Item> {
     }
 
     public T getFromId(String id) throws SQLException {
-        return getDatabaseItemFromId(id).item;
+        DatabaseItem<T> databaseItemFromId = getDatabaseItemFromId(id);
+        if (databaseItemFromId == null) {
+            return null;
+        }
+
+        return databaseItemFromId.item;
     }
 }

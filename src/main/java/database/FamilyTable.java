@@ -108,6 +108,6 @@ public class FamilyTable extends Table<Family> {
             family = resultToItem(rs);
         }
 
-        return family.item;
+        return family == null ? null : family.item;
     }
 }
