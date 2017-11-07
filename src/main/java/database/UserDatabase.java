@@ -2,37 +2,25 @@ package database;
 
 import com.koenig.commonModel.Family;
 import com.koenig.commonModel.User;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
 
-public class UserDatabase {
-    private Logger logger = LoggerFactory.getLogger(getClass().getSimpleName());
-    private Connection connection;
-
+public class UserDatabase extends Database {
     private UserTable userTable;
     private FamilyTable familyTable;
 
     public UserDatabase(Connection connection) {
-        this.connection = connection;
+        super(connection);
     }
 
     public void start() throws SQLException {
         userTable = new UserTable(connection);
         familyTable = new FamilyTable(connection, userTable);
-        if (!userTable.isExisting()) {
-            logger.info("Creating user table");
-            userTable.create();
-        }
-
-        if (!familyTable.isExisting()) {
-            logger.info("Creating family table");
-            familyTable.create();
-        }
+        tables.add(userTable);
+        tables.add(familyTable);
+        createAllTables();
     }
 
     public void stop() throws SQLException {
@@ -41,12 +29,16 @@ public class UserDatabase {
     }
 
     public void addUser(User user, String id) throws SQLException {
+        if (user.getName().isEmpty()) {
+            throw new SQLException("Username is empty");
+        }
+
         DatabaseItem<User> databaseItem = new DatabaseItem<>(user, id);
         userTable.add(databaseItem);
     }
 
     public List<User> getAllUser() throws SQLException {
-        return userTable.ToItemList(userTable.getAll());
+        return userTable.toItemList(userTable.getAll());
     }
 
     public void addFamily(Family family, String id) throws SQLException {
@@ -55,7 +47,7 @@ public class UserDatabase {
     }
 
     public List<Family> getAllFamilys() throws SQLException {
-        return familyTable.ToItemList(familyTable.getAll());
+        return familyTable.toItemList(familyTable.getAll());
     }
 
     public void addUserToFamily(String familyName, String userId) throws SQLException {
@@ -65,21 +57,53 @@ public class UserDatabase {
             throw new SQLException("Family does not exist");
         }
 
-        familyTable.addUserToFamily(family, userId);
+        startTransaction(new Transaction() {
+            @Override
+            public void run() throws SQLException {
+                familyTable.addUserToFamily(family, userId);
+                userTable.addFamileToUser(family.getName(), userId);
+            }
+        });
+
     }
 
 
-    public void deleteAll() throws SQLException {
-        String query = "DELETE FROM " + userTable.getTableName();
-        Statement statement = connection.createStatement();
-        statement.execute(query);
 
-        query = "DELETE FROM " + familyTable.getTableName();
-        statement = connection.createStatement();
-        statement.execute(query);
-    }
 
     public Family getFamilyByName(String familyName) throws SQLException {
         return familyTable.getFamilyByName(familyName);
+    }
+
+    public User getUserById(String userId) throws SQLException {
+
+        return userTable.getFromId(userId);
+    }
+
+    public UserTable getUserTable() {
+        return userTable;
+    }
+
+    public String getFamilyIdFromUser(String userId) throws SQLException {
+        Family familyFromUser = getFamilyFromUser(userId);
+        return familyFromUser.getId();
+    }
+
+    public List<User> getFamilyMemberFrom(String userId) throws SQLException {
+        Family family = getFamilyFromUser(userId);
+        return family.getUsers();
+    }
+
+    private Family getFamilyFromUser(String userId) throws SQLException {
+        User user = getUserById(userId);
+        if (user == null) {
+            throw new SQLException("User not found with id " + userId);
+        }
+
+        String family = user.getFamily();
+        if (family == null) {
+            throw new SQLException("Family not found from " + userId);
+        }
+
+        return familyTable.getFamilyByName(family);
     }
 }

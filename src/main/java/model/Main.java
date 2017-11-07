@@ -21,6 +21,8 @@ public class Main
         // create a database connection
         Connection connection = DriverManager.getConnection("jdbc:sqlite:" + DB_NAME);
         UserDatabase database = new UserDatabase(connection);
+
+
         new FamilyModel().start(database);
     }
 }

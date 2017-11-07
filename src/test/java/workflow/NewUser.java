@@ -2,10 +2,10 @@ package workflow;
 
 import com.koenig.commonModel.Family;
 import com.koenig.commonModel.User;
-import com.koenig.communication.Commands;
-import com.koenig.communication.messages.CreateUserMessage;
 import com.koenig.communication.messages.FamilyMessage;
 import com.koenig.communication.messages.TextMessage;
+import com.koenig.communication.messages.family.CreateUserMessage;
+import com.koenig.communication.messages.family.FamilyTextMessages;
 import database.UserDatabase;
 import database.UserTable;
 import model.FamilyModel;
@@ -44,7 +44,7 @@ public class NewUser {
         model = new FamilyModel();
         model.start(database);
 
-        database.deleteAll();
+        database.deleteAllEntrys();
 
         simulator.connect();
 
@@ -85,10 +85,10 @@ public class NewUser {
         String family = "TESTFAMILIEMITÖ";
         database.addUser(simulatorUser, simulator.getId());
         logger.info("Sending message");
-        simulator.sendFamilyMessage(FamilyMessage.CreateFamilyMessage(family));
+        simulator.sendFamilyMessage(FamilyTextMessages.CreateFamilyMessage(family));
 
 
-        simulator.waitForTextMessage(Commands.JOIN_FAMILY_SUCCESS, 2);
+        simulator.waitForTextMessage(FamilyTextMessages.JOIN_FAMILY_SUCCESS, 2);
 
         // check for new user
         List<User> all = database.getAllUser();
@@ -100,13 +100,15 @@ public class NewUser {
 
         // check for user in family
         Assert.assertEquals(all.get(0).getId(), families.get(0).getUsers().get(0).getId());
+        // check for family in user
+        Assert.assertEquals(all.get(0).getFamily(), families.get(0).getName());
         // check for received message
         List<FamilyMessage> receivedMessages = simulator.getReceivedMessages();
 
         Assert.assertEquals(2, receivedMessages.size());
 
-        Assert.assertTrue(receivedCommand(Commands.CREATE_FAMILY_SUCCESS));
-        Assert.assertTrue(receivedCommand(Commands.JOIN_FAMILY_SUCCESS));
+        Assert.assertTrue(receivedCommand(FamilyTextMessages.CREATE_FAMILY_SUCCESS));
+        Assert.assertTrue(receivedCommand(FamilyTextMessages.JOIN_FAMILY_SUCCESS));
     }
 
     @Test
@@ -116,10 +118,10 @@ public class NewUser {
         simulator.sendFamilyMessage(new CreateUserMessage(name, DateTime.now()));
         database.addFamily(kings, "TEST_ID");
         logger.info("Sending message");
-        simulator.sendFamilyMessage(FamilyMessage.JoinFamilyMessage(king));
+        simulator.sendFamilyMessage(FamilyTextMessages.JoinFamilyMessage(king));
 
 
-        simulator.waitForTextMessage(Commands.JOIN_FAMILY_SUCCESS, 200);
+        simulator.waitForTextMessage(FamilyTextMessages.JOIN_FAMILY_SUCCESS, 200);
 
         // check for new user
         List<User> all = database.getAllUser();
@@ -135,13 +137,15 @@ public class NewUser {
         Assert.assertEquals(milena.getId(), users.get(0).getId());
         Assert.assertEquals(simulator.getId(), users.get(1).getId());
 
+        // check for family in user
+        Assert.assertEquals(all.get(1).getFamily(), families.get(0).getName());
         // check for received message
         List<FamilyMessage> receivedMessages = simulator.getReceivedMessages();
 
         Assert.assertEquals(2, receivedMessages.size());
 
-        Assert.assertTrue(receivedCommand(Commands.CREATE_USER_SUCCESS));
-        Assert.assertTrue(receivedCommand(Commands.JOIN_FAMILY_SUCCESS));
+        Assert.assertTrue(receivedCommand(FamilyTextMessages.CREATE_USER_SUCCESS));
+        Assert.assertTrue(receivedCommand(FamilyTextMessages.JOIN_FAMILY_SUCCESS));
     }
 
     @Test
@@ -150,10 +154,10 @@ public class NewUser {
         database.addUser(milena, "TEST_ID");
         database.addFamily(kings, "TEST_ID");
         simulator.sendFamilyMessage(new CreateUserMessage(name, DateTime.now()));
-        simulator.sendFamilyMessage(FamilyMessage.JoinFamilyMessage(king + "NOT"));
+        simulator.sendFamilyMessage(FamilyTextMessages.JoinFamilyMessage(king + "NOT"));
 
 
-        simulator.waitForTextMessage(Commands.JOIN_FAMILY_FAIL, 2);
+        simulator.waitForTextMessage(FamilyTextMessages.JOIN_FAMILY_FAIL, 2);
 
         // check for new user
         List<User> all = database.getAllUser();
@@ -174,8 +178,8 @@ public class NewUser {
 
         Assert.assertEquals(2, receivedMessages.size());
 
-        Assert.assertTrue(receivedCommand(Commands.CREATE_USER_SUCCESS));
-        Assert.assertTrue(receivedCommand(Commands.JOIN_FAMILY_FAIL));
+        Assert.assertTrue(receivedCommand(FamilyTextMessages.CREATE_USER_SUCCESS));
+        Assert.assertTrue(receivedCommand(FamilyTextMessages.JOIN_FAMILY_FAIL));
     }
 
 
@@ -185,10 +189,10 @@ public class NewUser {
         database.addUser(simulatorUser, test_id);
         database.addUser(milena, milena.getId());
         database.addFamily(kings, "TEST_ID");
-        simulator.sendFamilyMessage(FamilyMessage.CreateFamilyMessage(king));
+        simulator.sendFamilyMessage(FamilyTextMessages.CreateFamilyMessage(king));
 
 
-        simulator.waitForTextMessage(Commands.CREATE_FAMILY_FAIL, 2);
+        simulator.waitForTextMessage(FamilyTextMessages.CREATE_FAMILY_FAIL, 2);
 
         // check for new user
         List<User> all = database.getAllUser();
@@ -208,7 +212,27 @@ public class NewUser {
 
         Assert.assertEquals(1, receivedMessages.size());
 
-        Assert.assertTrue(receivedCommand(Commands.CREATE_FAMILY_FAIL));
+        Assert.assertTrue(receivedCommand(FamilyTextMessages.CREATE_FAMILY_FAIL));
+    }
+
+    @Test
+    public void createUserFail() throws SQLException, InterruptedException {
+        String name = "";
+        simulator.sendFamilyMessage(new CreateUserMessage(name, DateTime.now()));
+
+
+        simulator.waitForTextMessage(FamilyTextMessages.CREATE_USER_FAIL, 2);
+
+        // check for new user
+        List<User> all = database.getAllUser();
+        Assert.assertEquals(0, all.size());
+
+        // check for received message
+        List<FamilyMessage> receivedMessages = simulator.getReceivedMessages();
+
+        Assert.assertEquals(1, receivedMessages.size());
+
+        Assert.assertTrue(receivedCommand(FamilyTextMessages.CREATE_USER_FAIL));
     }
 
 

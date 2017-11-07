@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class FamilyTable extends Table<Family> {
@@ -70,44 +71,49 @@ public class FamilyTable extends Table<Family> {
     }
 
     @Override
-    protected String getNamesOfSpecificParameterWithColon() {
-        return ",:" + USERS + ", :" + FAMILY_NAME;
-    }
-
-    @Override
-    protected String getNamesOfSpecificParameter() {
-        return ", " + USERS + ", " + FAMILY_NAME;
+    protected List<String> getColumnNames() {
+        return Arrays.asList(USERS, FAMILY_NAME);
     }
 
     public void addUserToFamily(Family family, String userId) throws SQLException {
-        String selectQuery = "UPDATE " + getTableName() + " SET " + getNamedParameter(USERS) + " WHERE " + getNamedParameter(COLUMN_ID);
+        lock.lock();
+        try {
+            String selectQuery = "UPDATE " + getTableName() + " SET " + getNamedParameter(USERS) + " WHERE " + getNamedParameter(COLUMN_ID);
 
-        NamedParameterStatement statement = new NamedParameterStatement(connection, selectQuery);
-        statement.setString(COLUMN_ID, family.getId());
-        StringBuilder builder = new StringBuilder();
-        for (User user : family.getUsers()) {
-            builder.append(user.getId());
-            builder.append(FamilyMessage.SEPARATOR);
+            NamedParameterStatement statement = new NamedParameterStatement(connection, selectQuery);
+            statement.setString(COLUMN_ID, family.getId());
+            StringBuilder builder = new StringBuilder();
+            for (User user : family.getUsers()) {
+                builder.append(user.getId());
+                builder.append(FamilyMessage.SEPARATOR);
+            }
+
+            builder.append(userId);
+            String users = builder.substring(0, builder.length());
+            statement.setString(USERS, users);
+            statement.executeUpdate();
+        } finally {
+            lock.unlock();
         }
-
-        builder.append(userId);
-        String users = builder.substring(0, builder.length());
-        statement.setString(USERS, users);
-        statement.executeUpdate();
     }
 
     public Family getFamilyByName(String familyName) throws SQLException {
-        DatabaseItem<Family> family = null;
-        String selectQuery = "SELECT * FROM " + getTableName() + " WHERE " + COLUMN_DELETED + " = :" + COLUMN_DELETED + " AND " + getNamedParameter(FAMILY_NAME);
+        lock.lock();
+        try {
+            DatabaseItem<Family> family = null;
+            String selectQuery = "SELECT * FROM " + getTableName() + " WHERE " + COLUMN_DELETED + " = :" + COLUMN_DELETED + " AND " + getNamedParameter(FAMILY_NAME);
 
-        NamedParameterStatement statement = new NamedParameterStatement(connection, selectQuery);
-        statement.setInt(COLUMN_DELETED, FALSE);
-        statement.setString(FAMILY_NAME, familyName);
-        ResultSet rs = statement.executeQuery();
-        while (rs.next()) {
-            family = resultToItem(rs);
+            NamedParameterStatement statement = new NamedParameterStatement(connection, selectQuery);
+            statement.setInt(COLUMN_DELETED, FALSE);
+            statement.setString(FAMILY_NAME, familyName);
+            ResultSet rs = statement.executeQuery();
+            while (rs.next()) {
+                family = resultToItem(rs);
+            }
+
+            return family == null ? null : family.item;
+        } finally {
+            lock.unlock();
         }
-
-        return family == null ? null : family.item;
     }
 }

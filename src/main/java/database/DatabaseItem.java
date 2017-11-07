@@ -50,7 +50,7 @@ public class DatabaseItem<T extends Item> {
 
     @Override
     public String toString() {
-        return "DatabaseItem{" +
+        return "LGADatabaseItem{" +
                 "deleted=" + deleted +
                 ", id=" + item.getId() +
                 ", insertDate=" + insertDate +
@@ -96,5 +96,9 @@ public class DatabaseItem<T extends Item> {
 
     public String getId() {
         return item.getId();
+    }
+
+    public T getItem() {
+        return item;
     }
 }

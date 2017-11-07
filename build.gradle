@@ -19,8 +19,18 @@ dependencies {
     compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.16.1'
     compile 'com.esotericsoftware:kryo:4.0.1'
 
-
-
     compile files ('D:/Bibliotheken/AndroidStudioProjects/Utilties/tcpcommunication/build/libs/tcpcommunication.jar')
+
     compile files('D:/Bibliotheken/AndroidStudioProjects/Kingsfamily/commonfamily/build/libs/commonfamily.jar')
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'model.Main'
+    }
+
+    // put dependencies in the jar file
+    from {
+        configurations.compile.collect {it.isDirectory() ? it : zipTree(it)}
+    }
 }

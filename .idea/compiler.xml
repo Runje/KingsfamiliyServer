@@ -2,8 +2,18 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
+      <module name="commonfamily_main" target="1.8" />
+      <module name="commonfamily_test" target="1.8" />
+      <module name="def_main" target="1.8" />
+      <module name="def_test" target="1.8" />
       <module name="kingsfamiliy.server_main" target="1.8" />
       <module name="kingsfamiliy.server_test" target="1.8" />
+      <module name="KingsfamiliyLibrary_main" target="1.8" />
+      <module name="KingsfamiliyLibrary_test" target="1.8" />
+      <module name="KingsfamilyLibrary_main" target="1.8" />
+      <module name="KingsfamilyLibrary_test" target="1.8" />
+      <module name="testlibrary_main" target="1.8" />
+      <module name="testlibrary_test" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>

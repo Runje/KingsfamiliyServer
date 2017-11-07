@@ -4,10 +4,8 @@ import com.example.OnAcceptListener;
 import com.example.OnReceiveBytesFromClientListener;
 import com.example.OnRemoveClientListener;
 import com.example.SocketChannelTCPServer;
-import com.koenig.communication.Commands;
 import com.koenig.communication.Parser;
 import com.koenig.communication.messages.FamilyMessage;
-import com.koenig.communication.messages.TextMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,19 +47,7 @@ public class Server extends SocketChannelTCPServer implements OnReceiveBytesFrom
         String name = msg.getName();
         Client client = findClient(socketChannel);
         client.id = msg.getFromId();
-        switch(name) {
-            case TextMessage.NAME:
-                String text = ((TextMessage) msg).getText();
-                if (text.equals(Commands.LOGIN)) {
-                    logger.info("Login");
 
-                    String[] words = text.split(" ");
-                    client.name = words[1];
-
-                    sendMessage(new TextMessage(Commands.LOGIN_SUCCESS), msg.getFromId());
-                }
-                break;
-        }
 
         logger.info(msg.toString());
         if (onReceiveMessageListener != null) {
