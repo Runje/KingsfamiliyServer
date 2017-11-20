@@ -1,10 +1,14 @@
 package database.conversion;
 
+import com.koenig.FamilyUtils;
+import com.koenig.commonModel.Category;
 import com.koenig.commonModel.Frequency;
+import com.koenig.commonModel.User;
 import com.koenig.commonModel.finance.CostDistribution;
 import com.koenig.commonModel.finance.Expenses;
 import com.koenig.commonModel.finance.StandingOrder;
 import database.DatabaseItem;
+import database.finance.CategoryTable;
 import database.finance.ExpensesTable;
 import database.finance.StandingOrderTable;
 import org.joda.time.DateTime;
@@ -15,21 +19,24 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Converter {
+    private final CategoryTable categoryTable;
     protected Logger logger = LoggerFactory.getLogger(getClass().getSimpleName());
 
     ExpensesTable expensesTable;
     StandingOrderTable standingOrderTable;
-    String milenaId;
-    String thomasId;
+    User milenaUser;
+    User thomasUser;
 
-    public Converter(ExpensesTable expensesTable, StandingOrderTable standingOrderTable, String milenaId, String thomasId) {
+    public Converter(ExpensesTable expensesTable, StandingOrderTable standingOrderTable, CategoryTable categoryTable, User milenaUser, User thomasUser) {
         this.expensesTable = expensesTable;
         this.standingOrderTable = standingOrderTable;
-        this.thomasId = thomasId;
-        this.milenaId = milenaId;
+        this.categoryTable = categoryTable;
+        this.thomasUser = thomasUser;
+        this.milenaUser = milenaUser;
     }
 
     public void convert(String path) throws SQLException {
@@ -51,6 +58,7 @@ public class Converter {
                 DatabaseItem<StandingOrder> standingOrder = convert(lgaStandingOrder);
                 if (!standingOrder.isDeleted()) {
                     standingOrderTable.add(standingOrder);
+
                 }
                 i++;
                 logger.info(i + "/" + standingOrders.size());
@@ -83,7 +91,7 @@ public class Converter {
 
     }
 
-    private DatabaseItem<StandingOrder> convert(LGAStandingOrder lgaStandingOrder) {
+    private DatabaseItem<StandingOrder> convert(LGAStandingOrder lgaStandingOrder) throws SQLException {
 
         boolean deleted = lgaStandingOrder.isDeleted();
         DateTime insertDate = lgaStandingOrder.insertDate;
@@ -106,16 +114,19 @@ public class Converter {
         return new DatabaseItem<StandingOrder>(standingOrder, insertDate, modifiedDate, deleted, insertId, modifiedId);
     }
 
-    private String getSubCategory(String name, String category) {
+    private String getSubCategory(String name, String category) throws SQLException {
+        String subcategory = "";
         if (category.equals("Transportmittel")) {
             // --> to Ford Focus
-            return "Ford Focus";
+            subcategory = "Ford Focus";
         } else if (category.equals("Arbeit")) {
             if (name.equals("Gehalt")) {
-                return "Gehalt";
-            } else return "Geschäftsreise";
+                subcategory = "Gehalt";
+            } else subcategory = "Geschäftsreise";
         }
-        return "";
+
+        categoryTable.addIfNew(new Category(category, Arrays.asList(subcategory)), thomasUser.getId());
+        return subcategory;
     }
 
     private Frequency lgaToFrequency(LGAFrequency lgaFrequency) {
@@ -178,46 +189,46 @@ public class Converter {
             case "Thomas":
                 switch (user) {
                     case "Thomas":
-                        costDistribution.putCosts(thomasId, costsInCent, costsInCent);
+                        costDistribution.putCosts(thomasUser, costsInCent, costsInCent);
                         break;
                     case "Milena":
-                        costDistribution.putCosts(thomasId, costsInCent, 0);
-                        costDistribution.putCosts(milenaId, 0, costsInCent);
+                        costDistribution.putCosts(thomasUser, costsInCent, 0);
+                        costDistribution.putCosts(milenaUser, 0, costsInCent);
                         break;
                     case "Alle":
-                        costDistribution.putCosts(thomasId, costsInCent, getHalfRoundDown(costsInCent));
-                        costDistribution.putCosts(milenaId, 0, getHalfRoundUp(costsInCent));
+                        costDistribution.putCosts(thomasUser, costsInCent, FamilyUtils.getHalfRoundDown(costsInCent));
+                        costDistribution.putCosts(milenaUser, 0, FamilyUtils.getHalfRoundUp(costsInCent));
                         break;
                 }
                 break;
             case "Milena":
                 switch (user) {
                     case "Milena":
-                        costDistribution.putCosts(milenaId, costsInCent, costsInCent);
+                        costDistribution.putCosts(milenaUser, costsInCent, costsInCent);
                         break;
                     case "Thomas":
-                        costDistribution.putCosts(milenaId, costsInCent, 0);
-                        costDistribution.putCosts(thomasId, 0, costsInCent);
+                        costDistribution.putCosts(milenaUser, costsInCent, 0);
+                        costDistribution.putCosts(thomasUser, 0, costsInCent);
                         break;
                     case "Alle":
-                        costDistribution.putCosts(milenaId, costsInCent, getHalfRoundDown(costsInCent));
-                        costDistribution.putCosts(thomasId, 0, getHalfRoundUp(costsInCent));
+                        costDistribution.putCosts(milenaUser, costsInCent, FamilyUtils.getHalfRoundDown(costsInCent));
+                        costDistribution.putCosts(thomasUser, 0, FamilyUtils.getHalfRoundUp(costsInCent));
                         break;
                 }
                 break;
             case "Alle":
                 switch (user) {
                     case "Thomas":
-                        costDistribution.putCosts(thomasId, getHalfRoundUp(costsInCent), costsInCent);
-                        costDistribution.putCosts(milenaId, getHalfRoundDown(costsInCent), 0);
+                        costDistribution.putCosts(thomasUser, FamilyUtils.getHalfRoundUp(costsInCent), costsInCent);
+                        costDistribution.putCosts(milenaUser, FamilyUtils.getHalfRoundDown(costsInCent), 0);
                         break;
                     case "Milena":
-                        costDistribution.putCosts(milenaId, getHalfRoundUp(costsInCent), costsInCent);
-                        costDistribution.putCosts(thomasId, getHalfRoundDown(costsInCent), 0);
+                        costDistribution.putCosts(milenaUser, FamilyUtils.getHalfRoundUp(costsInCent), costsInCent);
+                        costDistribution.putCosts(thomasUser, FamilyUtils.getHalfRoundDown(costsInCent), 0);
                         break;
                     case "Alle":
-                        costDistribution.putCosts(thomasId, getHalfRoundUp(costsInCent), getHalfRoundUp(costsInCent));
-                        costDistribution.putCosts(milenaId, getHalfRoundDown(costsInCent), getHalfRoundDown(costsInCent));
+                        costDistribution.putCosts(thomasUser, FamilyUtils.getHalfRoundUp(costsInCent), FamilyUtils.getHalfRoundUp(costsInCent));
+                        costDistribution.putCosts(milenaUser, FamilyUtils.getHalfRoundDown(costsInCent), FamilyUtils.getHalfRoundDown(costsInCent));
                         break;
                 }
                 break;
@@ -229,11 +240,5 @@ public class Converter {
         return costDistribution;
     }
 
-    private int getHalfRoundDown(int costsInCent) {
-        return costsInCent / 2;
-    }
 
-    private int getHalfRoundUp(int costsInCent) {
-        return (int) Math.ceil(costsInCent / 2.0);
-    }
 }

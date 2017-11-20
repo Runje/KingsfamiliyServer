@@ -1,5 +1,6 @@
 package model;
 
+import com.koenig.commonModel.User;
 import database.UserDatabase;
 
 import java.sql.Connection;
@@ -30,5 +31,10 @@ public class FamilyConnectionService implements ConnectionService {
 
         return connections.get(userId);
 
+    }
+
+    @Override
+    public User getUser(String userId) throws SQLException {
+        return database.getUserById(userId);
     }
 }

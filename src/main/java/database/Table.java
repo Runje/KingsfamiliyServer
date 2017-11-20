@@ -294,6 +294,15 @@ public abstract class Table<T extends Item> {
         }
     }
 
+    protected <X> X runInLock(Database.ResultTransaction<X> runnable) throws SQLException {
+        lock.lock();
+        try {
+            return runnable.run();
+        } finally {
+            lock.unlock();
+        }
+    }
+
     public void deleteFrom(String itemId, String userId) throws SQLException {
         update(itemId, new String[]{COLUMN_DELETED, COLUMN_MODIFIED_ID, COLUMN_MODIFIED_DATE}, (ps -> {
             setBool(ps, COLUMN_DELETED, true);
@@ -304,12 +313,10 @@ public abstract class Table<T extends Item> {
 
     public void updateFrom(T item, String userId) throws SQLException {
         List<String> columns = new ArrayList<>();
-        columns.add(COLUMN_DELETED);
         columns.add(COLUMN_MODIFIED_ID);
         columns.add(COLUMN_MODIFIED_DATE);
         columns.addAll(getColumnNames());
         update(item.getId(), columns.toArray(new String[]{}), (ps -> {
-            setBool(ps, COLUMN_DELETED, true);
             ps.setString(COLUMN_MODIFIED_ID, userId);
             setDateTime(ps, COLUMN_MODIFIED_DATE, DateTime.now());
             setItem(ps, item);

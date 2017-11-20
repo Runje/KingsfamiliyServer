@@ -1,10 +1,13 @@
 package model;
 
 import com.koenig.commonModel.Byteable;
+import com.koenig.commonModel.Category;
+import com.koenig.commonModel.User;
 import com.koenig.commonModel.finance.Expenses;
 import com.koenig.communication.messages.AUDMessage;
 import com.koenig.communication.messages.FamilyMessage;
 import com.koenig.communication.messages.TextMessage;
+import com.koenig.communication.messages.finance.CategorysMessage;
 import com.koenig.communication.messages.finance.ExpensesMessage;
 import com.koenig.communication.messages.finance.FinanceTextMessages;
 import communication.Server;
@@ -82,8 +85,23 @@ public class FinanceModel {
             case FinanceTextMessages.GET_ALL_EXPENSES:
                 sendAllExpensesFrom(fromId);
                 break;
+            case FinanceTextMessages.GET_ALL_CATEGORYS:
+                sendAllCategorysFrom(fromId);
+                break;
 
 
+        }
+    }
+
+    private void sendAllCategorysFrom(String userId) {
+        try {
+            FinanceDatabase database = getFinanceDatabaseFromUser(userId);
+            List<Category> categorys = database.getAllCategorys();
+            CategorysMessage message = new CategorysMessage(categorys);
+            server.sendMessage(message, userId);
+        } catch (SQLException e) {
+            logger.error(e.getMessage());
+            server.sendMessage(FinanceTextMessages.getAllCategorysMessageFail(), userId);
         }
     }
 
@@ -103,6 +121,11 @@ public class FinanceModel {
     private FinanceDatabase getFinanceDatabaseFromUser(String userId) throws SQLException {
         Connection connection = connectionService.getConnectionFromUser(userId);
         FinanceDatabase database = new FinanceDatabase(connection);
+        String thomasId = "c572d4e7-da4b-41d8-9c1f-7e9a97657155";
+        User thomas = connectionService.getUser(thomasId);
+        String milenaId = "c6540de0-46bb-42cd-939b-ce52677fa19d";
+        User milena = connectionService.getUser(milenaId);
+        //database.convert(milena, thomas);
         return database;
     }
 

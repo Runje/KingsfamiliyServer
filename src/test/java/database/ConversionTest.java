@@ -1,11 +1,14 @@
 package database;
 
+import com.koenig.commonModel.User;
 import com.koenig.commonModel.finance.Expenses;
 import database.conversion.Converter;
 import database.conversion.LGAExpenses;
 import database.conversion.LGAExpensesTable;
+import database.finance.CategoryTable;
 import database.finance.ExpensesTable;
 import database.finance.StandingOrderTable;
+import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -48,6 +51,7 @@ public class ConversionTest {
     public void convert() throws SQLException {
         ExpensesTable expensesTable = new ExpensesTable(connection);
         StandingOrderTable standingOrderTable = new StandingOrderTable(connection);
+        CategoryTable categoryTable = new CategoryTable(connection);
         if (!expensesTable.isExisting()) {
             expensesTable.create();
         } else expensesTable.deleteAllEntrys();
@@ -55,7 +59,10 @@ public class ConversionTest {
         if (!standingOrderTable.isExisting()) standingOrderTable.create();
         else standingOrderTable.deleteAllEntrys();
 
-        Converter converter = new Converter(expensesTable, standingOrderTable, "MILENA", "THOMAS");
+        if (!categoryTable.isExisting()) categoryTable.create();
+        else categoryTable.deleteAllEntrys();
+
+        Converter converter = new Converter(expensesTable, standingOrderTable, categoryTable, new User("MILENA", "KÖNIG", DateTime.now()), new User("THOMAS", "KÖNIG", DateTime.now()));
         converter.convert(path);
 
         List<DatabaseItem<Expenses>> allExpenses = expensesTable.getAll();

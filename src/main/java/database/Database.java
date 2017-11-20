@@ -89,5 +89,9 @@ public abstract class Database {
         void run() throws SQLException;
     }
 
+    public interface ResultTransaction<X> {
+        X run() throws SQLException;
+    }
+
 
 }
