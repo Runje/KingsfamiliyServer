@@ -2,6 +2,7 @@ package database;
 
 import com.koenig.commonModel.Family;
 import com.koenig.commonModel.User;
+import com.koenig.commonModel.database.DatabaseItem;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -21,6 +22,9 @@ public class UserDatabase extends Database {
         tables.add(userTable);
         tables.add(familyTable);
         createAllTables();
+
+        // TEST CODE
+
     }
 
     public void stop() throws SQLException {

@@ -2,9 +2,13 @@ package database.finance;
 
 import com.koenig.commonModel.Category;
 import com.koenig.commonModel.User;
+import com.koenig.commonModel.database.DatabaseItem;
 import com.koenig.commonModel.finance.Expenses;
+import com.koenig.commonModel.finance.StandingOrder;
 import database.Database;
+import database.TransactionID;
 import database.conversion.Converter;
+import org.joda.time.DateTime;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -12,6 +16,7 @@ import java.util.List;
 
 public class FinanceDatabase extends Database {
 
+    FinanceTransactionTable transactionTable;
     ExpensesTable expensesTable;
     StandingOrderTable standingOrderTable;
     CategoryTable categoryTable;
@@ -21,13 +26,15 @@ public class FinanceDatabase extends Database {
         expensesTable = new ExpensesTable(connection);
         standingOrderTable = new StandingOrderTable(connection);
         categoryTable = new CategoryTable(connection);
+        transactionTable = new FinanceTransactionTable(connection);
         tables.add(expensesTable);
         tables.add(standingOrderTable);
         tables.add(categoryTable);
+        tables.add(transactionTable);
         createAllTables();
     }
 
-    public void start() throws SQLException {
+    public void start() {
 
 
 
@@ -58,5 +65,25 @@ public class FinanceDatabase extends Database {
 
     public List<Category> getAllCategorys() throws SQLException {
         return categoryTable.toItemList(categoryTable.getAll());
+    }
+
+    public void addTransaction(String id, String userId) throws SQLException {
+        transactionTable.addFrom(new TransactionID(id), userId);
+    }
+
+    public boolean doesTransactionExist(String id) throws SQLException {
+        return transactionTable.doesItemExist(id);
+    }
+
+    public List<DatabaseItem<Expenses>> getExpensesChangesSince(DateTime lastSyncDate) throws SQLException {
+        return expensesTable.getChangesSinceDatabaseItems(lastSyncDate);
+    }
+
+    public List<DatabaseItem<StandingOrder>> getStandingOrderChangesSince(DateTime lastSyncDate) throws SQLException {
+        return standingOrderTable.getChangesSinceDatabaseItems(lastSyncDate);
+    }
+
+    public List<DatabaseItem<Category>> getCategorysChangesSince(DateTime lastSyncDate) throws SQLException {
+        return categoryTable.getChangesSinceDatabaseItems(lastSyncDate);
     }
 }

@@ -1,6 +1,7 @@
 package database;
 
 import com.koenig.commonModel.User;
+import database.finance.FinanceDatabase;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Assert;
@@ -16,14 +17,17 @@ public class DatabaseTest {
     private UserDatabase database;
 
     private String DB_TEST_NAME = "UserTest.sqlite";
+    private Connection connection;
+    private FinanceDatabase financeDatabase;
 
     @Before
     public void setup() throws SQLException {
-        Connection connection = DriverManager.getConnection("jdbc:sqlite:" + DB_TEST_NAME);
+        connection = DriverManager.getConnection("jdbc:sqlite:" + DB_TEST_NAME);
         database = new UserDatabase(connection);
         database.start();
         database.deleteAllEntrys();
-
+        financeDatabase = new FinanceDatabase(connection);
+        financeDatabase.deleteAllEntrys();
 
     }
 
@@ -35,30 +39,24 @@ public class DatabaseTest {
     @Test
     public void rollback() throws InterruptedException, SQLException {
         int n = 100;
-        Thread thread1 = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    database.startTransaction(new Database.Transaction() {
-                                                  @Override
-                                                  public void run() throws SQLException {
-                                                      try {
-                                                          for (int i = 0; i < n; i++) {
-                                                              database.addUser(new User("Name" + n, "Family" + n, new DateTime(n)), "id" + n);
-                                                          }
-                                                      } catch (SQLException e) {
-                                                          e.printStackTrace();
-                                                          Assert.assertTrue(false);
-                                                      }
+        Thread thread1 = new Thread(() -> {
+            try {
+                database.startTransaction(() -> {
+                            try {
+                                for (int i = 0; i < n; i++) {
+                                    database.addUser(new User("Name" + n, "Family" + n, new DateTime(n)), "id" + n);
+                                }
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                                Assert.assertTrue(false);
+                            }
 
-                                                      throw new SQLException("ERROR ON PURPOSE");
-                                                  }
-                                              },
-                            database.getUserTable());
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    Assert.assertTrue(false);
-                }
+                            throw new SQLException("ERROR ON PURPOSE");
+                        },
+                        database.getUserTable());
+            } catch (SQLException e) {
+                e.printStackTrace();
+                Assert.assertTrue(false);
             }
         });
 
@@ -90,5 +88,16 @@ public class DatabaseTest {
             // no user from thread 1 should be in the database
             Assert.assertTrue(user.getBirthday().getMillis() > n);
         }
+    }
+
+    @Test
+    public void exist() throws SQLException {
+
+        String testid = "TESTID";
+        String userId = "userId";
+        Assert.assertFalse(financeDatabase.doesTransactionExist(testid));
+        financeDatabase.addTransaction(testid, userId);
+
+        Assert.assertTrue(financeDatabase.doesTransactionExist(testid));
     }
 }

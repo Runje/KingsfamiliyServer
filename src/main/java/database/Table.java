@@ -1,26 +1,18 @@
 package database;
 
 import com.koenig.commonModel.Item;
+import com.koenig.commonModel.database.DatabaseItem;
+import com.koenig.commonModel.database.DatabaseTable;
 import org.joda.time.DateTime;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.locks.ReentrantLock;
 
-public abstract class Table<T extends Item> {
-    public static final String COLUMN_INSERT_DATE = "insert_date";
-    public static final String COLUMN_MODIFIED_DATE = "modified_date";
-    public static final String COLUMN_ID = "id";
-    public static final String COLUMN_INSERT_ID = "insert_id";
-    public static final String COLUMN_MODIFIED_ID = "modified_id";
-    public static final String COLUMN_DELETED = "deleted";
-    public static final int FALSE = 0;
-    public static final int TRUE = 1;
-    private static final String STRING_LIST_SEPARATOR = ";";
+public abstract class Table<T extends Item> extends DatabaseTable<T> {
+
     protected Connection connection;
-    protected ReentrantLock lock = new ReentrantLock();
+
 
     public Table(Connection connection) {
         this.connection = connection;
@@ -45,7 +37,7 @@ public abstract class Table<T extends Item> {
         return builder.toString();
     }
 
-    public abstract String getTableName();
+
 
     public static String getNamedParameters(String[] parameters) {
         StringBuilder builder = new StringBuilder();
@@ -102,14 +94,7 @@ public abstract class Table<T extends Item> {
         return parameter + " = :" + parameter;
     }
 
-    public List<T> toItemList(List<DatabaseItem<T>> list) {
-        List<T> users = new ArrayList<>(list.size());
-        for (DatabaseItem<T> user : list) {
-            users.add(user.item);
-        }
 
-        return users;
-    }
 
     protected abstract T getItem(ResultSet rs) throws SQLException;
 
@@ -120,8 +105,10 @@ public abstract class Table<T extends Item> {
         DateTime lastModifiedDate = getDateTime(rs, COLUMN_MODIFIED_DATE);
         String insertId = rs.getString(COLUMN_INSERT_ID);
         String modifiedId = rs.getString(COLUMN_MODIFIED_ID);
+        String name = rs.getString(COLUMN_NAME);
         T item = getItem(rs);
         item.setId(id);
+        item.setName(name);
         return new DatabaseItem<T>(item, insertDate, lastModifiedDate, deleted, insertId, modifiedId);
     }
 
@@ -133,17 +120,7 @@ public abstract class Table<T extends Item> {
      */
     protected abstract String getTableSpecificCreateStatement();
 
-    private String buildCreateStatement() {
-        return "CREATE TABLE " + getTableName() + " (" +
-                COLUMN_ID + " TEXT PRIMARY KEY, " +
-                COLUMN_DELETED + " INT, " +
-                COLUMN_INSERT_DATE + " LONG, " +
-                COLUMN_INSERT_ID + " TEXT, " +
-                COLUMN_MODIFIED_DATE + " LONG, " +
-                COLUMN_MODIFIED_ID + " TEXT" +
-                getTableSpecificCreateStatement() +
-                ");";
-    }
+
 
     protected void setDateTime(NamedParameterStatement ps, String columnName, DateTime date) throws SQLException {
         ps.setLong(columnName, date.getMillis());
@@ -152,6 +129,7 @@ public abstract class Table<T extends Item> {
     protected abstract void setItem(NamedParameterStatement ps, T item) throws SQLException;
 
     protected void setBool(NamedParameterStatement statement, String columnName, boolean b) throws SQLException {
+        // TODO: use Short
         statement.setInt(columnName, b ? 1 : 0);
     }
 
@@ -165,7 +143,7 @@ public abstract class Table<T extends Item> {
         return builder.substring(0, builder.length() - 3);
     }
 
-    protected abstract List<String> getColumnNames();
+
 
     protected String getNamesOfSpecificParameter() {
         List<String> columnNames = getColumnNames();
@@ -177,50 +155,32 @@ public abstract class Table<T extends Item> {
         return builder.substring(0, builder.length() - 2);
     }
 
-    public void addFrom(T item, String userId) throws SQLException {
-        runInLock(() -> {
-            DateTime now = DateTime.now();
-            DatabaseItem<T> databaseItem = new DatabaseItem<>(item, now, now, false, userId, userId);
-            add(databaseItem);
-        });
-    }
+
 
     public void add(DatabaseItem<T> databaseItem) throws SQLException {
         runInLock(() -> {
 
             NamedParameterStatement ps = new NamedParameterStatement(connection, "insert into " + getTableName() +
-                    "(" + COLUMN_ID + ", " + COLUMN_DELETED + ", " + COLUMN_INSERT_DATE + ", " + COLUMN_INSERT_ID + ", " + COLUMN_MODIFIED_DATE + ", " + COLUMN_MODIFIED_ID + getNamesOfSpecificParameter() + ") " +
-                    " values(:" + COLUMN_ID + ", :" + COLUMN_DELETED + ", :" + COLUMN_INSERT_DATE + ", :" + COLUMN_INSERT_ID + ", :" + COLUMN_MODIFIED_DATE + ", :" + COLUMN_MODIFIED_ID +
+                    "(" + COLUMN_ID + ", " + COLUMN_DELETED + ", " + COLUMN_INSERT_DATE + ", " + COLUMN_INSERT_ID + ", " + COLUMN_MODIFIED_DATE + ", " + COLUMN_MODIFIED_ID + ", " + COLUMN_NAME + getNamesOfSpecificParameter() + ") " +
+                    " values(:" + COLUMN_ID + ", :" + COLUMN_DELETED + ", :" + COLUMN_INSERT_DATE + ", :" + COLUMN_INSERT_ID + ", :" + COLUMN_MODIFIED_DATE + ", :" + COLUMN_MODIFIED_ID + ", :" + COLUMN_NAME +
                     getNamesOfSpecificParameterWithColon() + ")");
-            setDateTime(ps, COLUMN_MODIFIED_DATE, databaseItem.lastModifiedDate);
-            setDateTime(ps, COLUMN_INSERT_DATE, databaseItem.insertDate);
-            ps.setString(COLUMN_INSERT_ID, databaseItem.insertId);
-            ps.setString(COLUMN_MODIFIED_ID, databaseItem.lastModifiedId);
+            setDateTime(ps, COLUMN_MODIFIED_DATE, databaseItem.getLastModifiedDate());
+            setDateTime(ps, COLUMN_INSERT_DATE, databaseItem.getInsertDate());
+            ps.setString(COLUMN_INSERT_ID, databaseItem.getInsertId());
+            ps.setString(COLUMN_MODIFIED_ID, databaseItem.getLastModifiedId());
             ps.setString(COLUMN_ID, databaseItem.getId());
             setBool(ps, COLUMN_DELETED, databaseItem.isDeleted());
-            setItem(ps, databaseItem.item);
+            ps.setString(COLUMN_NAME, databaseItem.getName());
+            setItem(ps, databaseItem.getItem());
             ps.executeUpdate();
         });
     }
 
-    protected List<String> getStringList(String executedExpenses) {
-        String[] items = executedExpenses.split(STRING_LIST_SEPARATOR);
-        // need to make a copy to allow List.add method! (Alternative create list  manually)
-        return new ArrayList<>(Arrays.asList(items));
-    }
-
     protected void setStringList(NamedParameterStatement ps, String name, List<String> list) throws SQLException {
-        if (list.size() > 0) {
-            StringBuilder builder = new StringBuilder();
-            for (String s : list) {
-                builder.append(s + STRING_LIST_SEPARATOR);
-            }
-
-            ps.setString(name, builder.substring(0, builder.length() - 1));
-        } else {
-            ps.setString(name, "");
-        }
+        ps.setString(name, buildStringList(list));
     }
+
+
 
     public DatabaseItem<T> getDatabaseItemFromId(String id) throws SQLException {
         lock.lock();
@@ -230,6 +190,7 @@ public abstract class Table<T extends Item> {
             String selectQuery = "SELECT * FROM " + getTableName() + " WHERE " + COLUMN_DELETED + " = :" + COLUMN_DELETED + " AND " + COLUMN_ID + " = :" + COLUMN_ID;
 
             NamedParameterStatement statement = new NamedParameterStatement(connection, selectQuery);
+            // TODO: only undeleted?
             statement.setInt(COLUMN_DELETED, FALSE);
             statement.setString(COLUMN_ID, id);
             ResultSet rs = statement.executeQuery();
@@ -252,7 +213,7 @@ public abstract class Table<T extends Item> {
                 return null;
             }
 
-            return databaseItemFromId.item;
+            return databaseItemFromId.getItem();
         } finally {
             lock.unlock();
         }
@@ -285,23 +246,7 @@ public abstract class Table<T extends Item> {
         });
     }
 
-    protected void runInLock(Database.Transaction runnable) throws SQLException {
-        lock.lock();
-        try {
-            runnable.run();
-        } finally {
-            lock.unlock();
-        }
-    }
 
-    protected <X> X runInLock(Database.ResultTransaction<X> runnable) throws SQLException {
-        lock.lock();
-        try {
-            return runnable.run();
-        } finally {
-            lock.unlock();
-        }
-    }
 
     public void deleteFrom(String itemId, String userId) throws SQLException {
         update(itemId, new String[]{COLUMN_DELETED, COLUMN_MODIFIED_ID, COLUMN_MODIFIED_DATE}, (ps -> {
@@ -323,6 +268,60 @@ public abstract class Table<T extends Item> {
         }));
 
 
+    }
+
+    public List<DatabaseItem<T>> getChangesSinceDatabaseItems(DateTime lastSyncDate) throws SQLException {
+        String query = "SELECT * FROM " + getTableName() + " WHERE " + COLUMN_MODIFIED_DATE + " > " + ":" + COLUMN_MODIFIED_DATE;
+        NamedParameterStatement statement = new NamedParameterStatement(connection, query);
+        setDateTime(statement, COLUMN_MODIFIED_DATE, lastSyncDate);
+
+        return createListFromStatement(statement);
+    }
+
+    public List<T> getChangesSince(DateTime lastSyncDate) throws SQLException {
+        return toItemList(getChangesSinceDatabaseItems(lastSyncDate));
+    }
+
+    private List<DatabaseItem<T>> createListFromStatement(NamedParameterStatement statement) throws SQLException {
+        ResultSet rs = statement.executeQuery();
+        List<DatabaseItem<T>> result = new ArrayList<>();
+        while (rs.next()) {
+            result.add(resultToItem(rs));
+        }
+
+        return result;
+    }
+
+    public boolean doesItemExist(String id) throws SQLException {
+        String query = "SELECT COUNT(*) FROM " + getTableName() + " WHERE " + getNamedParameter(COLUMN_ID) + " LIMIT 1";
+        NamedParameterStatement statement = new NamedParameterStatement(connection, query);
+        statement.setString(COLUMN_ID, id);
+        ResultSet rs = statement.executeQuery();
+        if (rs.next()) {
+
+            return rs.getInt(1) != 0;
+        }
+
+        throw new SQLException("Couldn't check existence");
+    }
+
+    public List<DatabaseItem<T>> getDatabaseItemsFromName(String name) throws SQLException {
+        lock.lock();
+        try {
+
+            String selectQuery = "SELECT * FROM " + getTableName() + " WHERE " + COLUMN_DELETED + " = :" + COLUMN_DELETED + " AND " + COLUMN_NAME + " = :" + COLUMN_NAME;
+
+            NamedParameterStatement statement = new NamedParameterStatement(connection, selectQuery);
+            statement.setInt(COLUMN_DELETED, FALSE);
+            statement.setString(COLUMN_NAME, name);
+            return createListFromStatement(statement);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public List<T> getFromName(String name) throws SQLException {
+        return toItemList(getDatabaseItemsFromName(name));
     }
 
     protected interface ParameterSetter {

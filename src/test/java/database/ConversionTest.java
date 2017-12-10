@@ -1,6 +1,7 @@
 package database;
 
 import com.koenig.commonModel.User;
+import com.koenig.commonModel.database.DatabaseItem;
 import com.koenig.commonModel.finance.Expenses;
 import database.conversion.Converter;
 import database.conversion.LGAExpenses;

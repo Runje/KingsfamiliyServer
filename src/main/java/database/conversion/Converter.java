@@ -4,10 +4,10 @@ import com.koenig.FamilyUtils;
 import com.koenig.commonModel.Category;
 import com.koenig.commonModel.Frequency;
 import com.koenig.commonModel.User;
+import com.koenig.commonModel.database.DatabaseItem;
 import com.koenig.commonModel.finance.CostDistribution;
 import com.koenig.commonModel.finance.Expenses;
 import com.koenig.commonModel.finance.StandingOrder;
-import database.DatabaseItem;
 import database.finance.CategoryTable;
 import database.finance.ExpensesTable;
 import database.finance.StandingOrderTable;
@@ -61,7 +61,7 @@ public class Converter {
 
                 }
                 i++;
-                logger.info(i + "/" + standingOrders.size());
+                //logger.info(i + "/" + standingOrders.size());
             }
 
             logger.info("Converted all standing orders.");
@@ -74,7 +74,7 @@ public class Converter {
                     expensesTable.add(expensesDatabaseItem);
                 }
                 i++;
-                logger.info(i + "/" + lgaExpenses.size());
+                //logger.info(i + "/" + lgaExpenses.size());
             }
 
             logger.info("Converted all expenses.");

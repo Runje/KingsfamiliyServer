@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class FamilyModel implements OnReceiveMessageListener {
@@ -36,6 +37,26 @@ public class FamilyModel implements OnReceiveMessageListener {
         server = new Server(ConnectUtils.PORT, this);
         financeModel = new FinanceModel(server, new FamilyConnectionService(database));
         server.start();
+        String thomasId = "c572d4e7-da4b-41d8-9c1f-7e9a97657155";
+        User thomas = database.getUserById(thomasId);
+        User userthomas = new User(thomasId, "Thomas", "König", new DateTime(1987, 6, 14, 12, 0));
+        if (thomas == null) {
+            database.addUser(userthomas, thomasId);
+        }
+        String milenaId = "c6540de0-46bb-42cd-939b-ce52677fa19d";
+        User milena = database.getUserById(milenaId);
+        User userMilena = new User(milenaId, "Milena", "König", new DateTime(1987, 8, 10, 12, 0));
+        if (milena == null) {
+            database.addUser(userMilena, milenaId);
+        }
+
+        Family family = database.getFamilyByName("König");
+        if (family == null) {
+            List<User> users = new ArrayList<>(2);
+            users.add(userMilena);
+            users.add(userthomas);
+            database.addFamily(new Family("König", users), thomasId);
+        }
 
     }
 

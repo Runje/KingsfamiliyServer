@@ -2,7 +2,6 @@ package database.finance;
 
 import com.koenig.commonModel.finance.BookkeepingEntry;
 import com.koenig.commonModel.finance.CostDistribution;
-import database.DatabaseItem;
 import database.NamedParameterStatement;
 import database.Table;
 
@@ -15,7 +14,7 @@ import java.util.Collection;
 import java.util.List;
 
 public abstract class BookkeepingTable<T extends BookkeepingEntry> extends Table<T> {
-    private static final String NAME = "name";
+
     private static final String CATEGORY = "category";
     private static final String SUBCATEGORY = "sub_category";
     private static final String COSTS = "costs";
@@ -28,7 +27,7 @@ public abstract class BookkeepingTable<T extends BookkeepingEntry> extends Table
 
     @Override
     protected T getItem(ResultSet rs) throws SQLException {
-        String name = rs.getString(NAME);
+        String name = rs.getString(COLUMN_NAME);
         String category = rs.getString(CATEGORY);
         String subcategory = rs.getString(SUBCATEGORY);
         int costs = rs.getInt(COSTS);
@@ -48,7 +47,6 @@ public abstract class BookkeepingTable<T extends BookkeepingEntry> extends Table
     @Override
     protected String getTableSpecificCreateStatement() {
         return ", "
-                + NAME + " TEXT,"
                 + CATEGORY + " TEXT,"
                 + SUBCATEGORY + " TEXT,"
                 + COSTS + " INT,"
@@ -60,7 +58,6 @@ public abstract class BookkeepingTable<T extends BookkeepingEntry> extends Table
 
     @Override
     protected void setItem(NamedParameterStatement ps, BookkeepingEntry item) throws SQLException {
-        ps.setString(NAME, item.getName());
         ps.setString(CATEGORY, item.getCategory());
         ps.setString(SUBCATEGORY, item.getSubCategory());
         ps.setInt(COSTS, item.getCosts());
@@ -73,7 +70,6 @@ public abstract class BookkeepingTable<T extends BookkeepingEntry> extends Table
     @Override
     protected List<String> getColumnNames() {
         ArrayList<String> columnNames = new ArrayList<>();
-        columnNames.add(NAME);
         columnNames.add(CATEGORY);
         columnNames.add(SUBCATEGORY);
         columnNames.add(COSTS);
@@ -84,29 +80,5 @@ public abstract class BookkeepingTable<T extends BookkeepingEntry> extends Table
 
     protected abstract Collection<? extends String> getBookkeepingColumnNames();
 
-    public List<DatabaseItem<T>> getDatabaseItemsFromName(String name) throws SQLException {
-        lock.lock();
-        try {
-            List<DatabaseItem<T>> result = new ArrayList<>();
-            DatabaseItem<T> item = null;
-            String selectQuery = "SELECT * FROM " + getTableName() + " WHERE " + COLUMN_DELETED + " = :" + COLUMN_DELETED + " AND " + NAME + " = :" + NAME;
 
-            NamedParameterStatement statement = new NamedParameterStatement(connection, selectQuery);
-            statement.setInt(COLUMN_DELETED, FALSE);
-            statement.setString(NAME, name);
-            ResultSet rs = statement.executeQuery();
-            while (rs.next()) {
-                item = resultToItem(rs);
-                result.add(item);
-            }
-
-            return result;
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    public List<T> getFromName(String name) throws SQLException {
-        return toItemList(getDatabaseItemsFromName(name));
-    }
 }

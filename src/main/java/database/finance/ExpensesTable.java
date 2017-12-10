@@ -30,7 +30,7 @@ public class ExpensesTable extends BookkeepingTable<Expenses> {
 
     @Override
     protected String getBookkeepingTableSpecificCreateStatement() {
-        return "," + DATE + " TEXT, " + STANDING_ORDER + " LONG";
+        return "," + DATE + " LONG, " + STANDING_ORDER + " TEXT";
     }
 
     @Override

@@ -15,7 +15,6 @@ import java.util.Map;
 
 public class UserTable extends Table<User> {
     public static final String NAME = "user_table";
-    public static final String USER_NAME = "user_name";
     public static final String FAMILY_NAME = "family_name";
     public static final String BIRTHDAY = "birthday";
     public static final String PERMISSIONS = "permissions";
@@ -31,7 +30,7 @@ public class UserTable extends Table<User> {
 
     @Override
     protected User getItem(ResultSet rs) throws SQLException {
-        String userName = rs.getString(USER_NAME);
+        String userName = rs.getString(COLUMN_NAME);
         String family = rs.getString(FAMILY_NAME);
         DateTime birthday = getDateTime(rs, BIRTHDAY);
         Map<Component, Permission> permissionMap = getPermissions(rs, PERMISSIONS);
@@ -45,7 +44,7 @@ public class UserTable extends Table<User> {
 
     @Override
     protected String getTableSpecificCreateStatement() {
-        return ", " + USER_NAME + " TEXT, " +
+        return ", " +
                 FAMILY_NAME + " TEXT," +
                 BIRTHDAY + " LONG," +
                 PERMISSIONS + " BLOB";
@@ -53,7 +52,6 @@ public class UserTable extends Table<User> {
 
     @Override
     protected void setItem(NamedParameterStatement ps, User item) throws SQLException {
-        ps.setString(USER_NAME, item.getName());
         ps.setString(FAMILY_NAME, item.getFamily());
         setDateTime(ps, BIRTHDAY, item.getBirthday());
         ps.setBytes(PERMISSIONS, User.permissionsToBytes(item.getPermissions()));
@@ -61,7 +59,7 @@ public class UserTable extends Table<User> {
 
     @Override
     protected List<String> getColumnNames() {
-        return Arrays.asList(USER_NAME, FAMILY_NAME, BIRTHDAY, PERMISSIONS);
+        return Arrays.asList(FAMILY_NAME, BIRTHDAY, PERMISSIONS);
     }
 
     public void addFamileToUser(String familyName, String userId) throws SQLException {

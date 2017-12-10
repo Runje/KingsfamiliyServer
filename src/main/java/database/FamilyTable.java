@@ -2,6 +2,7 @@ package database;
 
 import com.koenig.commonModel.Family;
 import com.koenig.commonModel.User;
+import com.koenig.commonModel.database.DatabaseItem;
 import com.koenig.communication.messages.FamilyMessage;
 
 import java.sql.Connection;
@@ -14,7 +15,6 @@ import java.util.List;
 public class FamilyTable extends Table<Family> {
     public static final String NAME = "family_table";
     public static final String USERS = "users";
-    public static final String FAMILY_NAME = "family_name";
     private final UserTable userTable;
 
     public FamilyTable(Connection connection, UserTable userTable) {
@@ -41,7 +41,7 @@ public class FamilyTable extends Table<Family> {
             }
         }
 
-        String family = rs.getString(FAMILY_NAME);
+        String family = rs.getString(COLUMN_NAME);
 
         return new Family(family, users);
     }
@@ -49,14 +49,12 @@ public class FamilyTable extends Table<Family> {
 
     @Override
     protected String getTableSpecificCreateStatement() {
-        return ", " + USERS + " TEXT, " +
-                FAMILY_NAME + " TEXT";
+        return ", " + USERS + " TEXT ";
     }
 
     @Override
     protected void setItem(NamedParameterStatement ps, Family item) throws SQLException {
         setUsers(item.getUsers(), ps);
-        ps.setString(FAMILY_NAME, item.getName());
     }
 
     private void setUsers(List<User> users, NamedParameterStatement ps) throws SQLException {
@@ -72,7 +70,7 @@ public class FamilyTable extends Table<Family> {
 
     @Override
     protected List<String> getColumnNames() {
-        return Arrays.asList(USERS, FAMILY_NAME);
+        return Arrays.asList(USERS);
     }
 
     public void addUserToFamily(Family family, String userId) throws SQLException {
@@ -101,17 +99,17 @@ public class FamilyTable extends Table<Family> {
         lock.lock();
         try {
             DatabaseItem<Family> family = null;
-            String selectQuery = "SELECT * FROM " + getTableName() + " WHERE " + COLUMN_DELETED + " = :" + COLUMN_DELETED + " AND " + getNamedParameter(FAMILY_NAME);
+            String selectQuery = "SELECT * FROM " + getTableName() + " WHERE " + COLUMN_DELETED + " = :" + COLUMN_DELETED + " AND " + getNamedParameter(COLUMN_NAME);
 
             NamedParameterStatement statement = new NamedParameterStatement(connection, selectQuery);
             statement.setInt(COLUMN_DELETED, FALSE);
-            statement.setString(FAMILY_NAME, familyName);
+            statement.setString(COLUMN_NAME, familyName);
             ResultSet rs = statement.executeQuery();
             while (rs.next()) {
                 family = resultToItem(rs);
             }
 
-            return family == null ? null : family.item;
+            return family == null ? null : family.getItem();
         } finally {
             lock.unlock();
         }
