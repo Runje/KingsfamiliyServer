@@ -86,4 +86,8 @@ public class FinanceDatabase extends Database {
     public List<DatabaseItem<Category>> getCategorysChangesSince(DateTime lastSyncDate) throws SQLException {
         return categoryTable.getChangesSinceDatabaseItems(lastSyncDate);
     }
+
+    public void addCategory(Category transport, String userId) throws SQLException {
+        categoryTable.addFrom(transport, userId);
+    }
 }

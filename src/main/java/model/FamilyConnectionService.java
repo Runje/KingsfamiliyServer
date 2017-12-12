@@ -24,12 +24,12 @@ public class FamilyConnectionService implements ConnectionService {
 
     @Override
     public Connection getConnectionFromUser(String userId) throws SQLException {
-        if (connections.get(userId) == null) {
-            String familyId = database.getFamilyIdFromUser(userId);
-            connections.put(userId, DriverManager.getConnection("jdbc:sqlite:" + familyIdToDatabaseName(familyId)));
+        String familyId = database.getFamilyIdFromUser(userId);
+        if (connections.get(familyId) == null) {
+            connections.put(familyId, DriverManager.getConnection("jdbc:sqlite:" + familyIdToDatabaseName(familyId)));
         }
 
-        return connections.get(userId);
+        return connections.get(familyId);
 
     }
 

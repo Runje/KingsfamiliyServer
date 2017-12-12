@@ -89,6 +89,7 @@ public class UserDatabase extends Database {
 
     public String getFamilyIdFromUser(String userId) throws SQLException {
         Family familyFromUser = getFamilyFromUser(userId);
+        if (familyFromUser == null) return null;
         return familyFromUser.getId();
     }
 

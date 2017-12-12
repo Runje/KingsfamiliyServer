@@ -33,21 +33,21 @@ public class Simulator extends SocketChannelTCPClient implements OnConnectionCha
         return receivedMessages;
     }
 
-    public void waitForTextMessage(String command, int timeOutInS) throws InterruptedException {
+    public boolean waitForTextMessage(String command, int timeOutInS) throws InterruptedException {
         int i = 0;
         int intervall = 100;
-        boolean exit = false;
-        while (i < 1000 * timeOutInS / intervall && !exit) {
+        while (i < 1000 * timeOutInS / intervall) {
             for (FamilyMessage message : receivedMessages) {
-                if (message.getName().equals(TextMessage.NAME) && ((TextMessage) message).getText().equals(command)) {
-                    exit = true;
-                    break;
+                if (message.getName().equals(TextMessage.NAME) && ((TextMessage) message).getText().startsWith(command)) {
+                    return true;
                 }
             }
 
             Thread.sleep(intervall);
             i++;
         }
+
+        return false;
     }
 
     @Override
@@ -98,5 +98,27 @@ public class Simulator extends SocketChannelTCPClient implements OnConnectionCha
 
     public String getId() {
         return fromId;
+    }
+
+    public FamilyMessage waitForMessage(String text, int timeOutInS) throws InterruptedException {
+        int i = 0;
+        int intervall = 100;
+        boolean exit = false;
+        while (i < 1000 * timeOutInS / intervall && !exit) {
+            for (FamilyMessage message : receivedMessages) {
+                if (message.getName().equals(text)) {
+                    return message;
+                }
+            }
+
+            Thread.sleep(intervall);
+            i++;
+        }
+
+        return null;
+    }
+
+    public void clearMessages() {
+        receivedMessages.clear();
     }
 }

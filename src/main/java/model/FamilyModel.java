@@ -28,6 +28,7 @@ public class FamilyModel implements OnReceiveMessageListener {
     private Server server;
     private UserDatabase database;
     private FinanceModel financeModel;
+    private FamilyConnectionService familyConnectionService;
 
     public void start(UserDatabase userDatabase) throws SQLException {
         logger.info("Start");
@@ -35,7 +36,8 @@ public class FamilyModel implements OnReceiveMessageListener {
 
         database.start();
         server = new Server(ConnectUtils.PORT, this);
-        financeModel = new FinanceModel(server, new FamilyConnectionService(database));
+        familyConnectionService = new FamilyConnectionService(database);
+        financeModel = new FinanceModel(server, getFamilyConnectionService());
         server.start();
         String thomasId = "c572d4e7-da4b-41d8-9c1f-7e9a97657155";
         User thomas = database.getUserById(thomasId);
@@ -58,6 +60,11 @@ public class FamilyModel implements OnReceiveMessageListener {
             database.addFamily(new Family("König", users), thomasId);
         }
 
+    }
+
+    public FamilyConnectionService getFamilyConnectionService() {
+
+        return familyConnectionService;
     }
 
 

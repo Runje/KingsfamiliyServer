@@ -85,7 +85,7 @@ public class DatabaseTest {
         Assert.assertEquals(n, allUser.size());
 
         for (User user : allUser) {
-            // no user from thread 1 should be in the database
+            // no user from thread 1 should be in the userDatabase
             Assert.assertTrue(user.getBirthday().getMillis() > n);
         }
     }
