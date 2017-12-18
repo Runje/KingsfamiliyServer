@@ -1,5 +1,7 @@
 package database;
 
+import com.koenig.commonModel.Item;
+import com.sun.istack.internal.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +17,20 @@ public abstract class Database {
 
     public Database(Connection connection) {
         this.connection = connection;
+    }
+
+    protected abstract Table getItemTable(@NotNull Item item) throws SQLException;
+
+    public void addItem(@NotNull Item item, String userId) throws SQLException {
+        getItemTable(item).addFrom(item, userId);
+    }
+
+    public void deleteItem(@NotNull Item item, String userId) throws SQLException {
+        getItemTable(item).deleteFrom(item.getId(), userId);
+    }
+
+    public void updateItem(@NotNull Item item, String userId) throws SQLException {
+        getItemTable(item).updateFrom(item, userId);
     }
 
     public void createAllTables() throws SQLException {

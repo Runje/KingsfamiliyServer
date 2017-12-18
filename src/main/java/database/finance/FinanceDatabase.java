@@ -1,11 +1,14 @@
 package database.finance;
 
 import com.koenig.commonModel.Category;
+import com.koenig.commonModel.Item;
+import com.koenig.commonModel.ItemType;
 import com.koenig.commonModel.User;
 import com.koenig.commonModel.database.DatabaseItem;
 import com.koenig.commonModel.finance.Expenses;
 import com.koenig.commonModel.finance.StandingOrder;
 import database.Database;
+import database.Table;
 import database.TransactionID;
 import database.conversion.Converter;
 import org.joda.time.DateTime;
@@ -90,4 +93,21 @@ public class FinanceDatabase extends Database {
     public void addCategory(Category transport, String userId) throws SQLException {
         categoryTable.addFrom(transport, userId);
     }
+
+    @Override
+    protected Table getItemTable(Item item) throws SQLException {
+        switch (ItemType.fromItem(item)) {
+
+            case EXPENSES:
+                return expensesTable;
+            case STANDING_ORDER:
+                return standingOrderTable;
+            case CATEGORY:
+                return categoryTable;
+            default:
+                throw new SQLException("Unsupported item");
+        }
+    }
+
+
 }

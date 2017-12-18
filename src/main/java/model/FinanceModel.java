@@ -1,12 +1,12 @@
 package model;
 
 import com.koenig.commonModel.*;
-import com.koenig.commonModel.finance.Expenses;
 import com.koenig.communication.messages.*;
 import com.koenig.communication.messages.finance.FinanceTextMessages;
 import communication.Server;
 import database.finance.FinanceDatabase;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +18,7 @@ public class FinanceModel {
     private Logger logger = LoggerFactory.getLogger(getClass().getSimpleName());
     private Server server;
     private ConnectionService connectionService;
+    private boolean conversionStarted;
 
     public FinanceModel(Server server, ConnectionService connectionService) {
         this.server = server;
@@ -38,7 +39,8 @@ public class FinanceModel {
 
             case AskForUpdatesMessage.NAME:
                 AskForUpdatesMessage askForUpdatesMessage = (AskForUpdatesMessage) message;
-                sendUpdates(askForUpdatesMessage.getLastSyncDate(), askForUpdatesMessage.getUpdateType(), userId);
+                // get all updates from last sync date minus one day to make sure to skip no transactions...
+                sendUpdates(askForUpdatesMessage.getLastSyncDate().minus(Duration.standardDays(1)), askForUpdatesMessage.getUpdateType(), userId);
                 break;
         }
     }
@@ -81,36 +83,30 @@ public class FinanceModel {
 
         boolean success = false;
         Operator operation = op.getOperator();
-        if (item instanceof Expenses) {
-            Expenses expenses = (Expenses) op.getItem();
-            try {
-                FinanceDatabase financeDatabaseFromUser = getFinanceDatabaseFromUser(userId);
-                switch (operation) {
-                    case ADD:
-                        financeDatabaseFromUser.addExpenses(expenses, userId);
-                        success = true;
-                        break;
-                    case DELETE:
-                        financeDatabaseFromUser.deleteExpenses(expenses, userId);
-                        success = true;
-                        break;
+        try {
+            FinanceDatabase financeDatabaseFromUser = getFinanceDatabaseFromUser(userId);
+            switch (operation) {
+                case ADD:
+                    financeDatabaseFromUser.addItem(op.getItem(), userId);
+                    success = true;
+                    break;
+                case DELETE:
+                    financeDatabaseFromUser.deleteItem(op.getItem(), userId);
+                    success = true;
+                    break;
 
-                    case UPDATE:
-                        financeDatabaseFromUser.updateExpenses(expenses, userId);
-                        success = true;
-                        break;
+                case UPDATE:
+                    financeDatabaseFromUser.updateItem(op.getItem(), userId);
+                    success = true;
+                    break;
 
-                    default:
-                        logger.error("Unsupported op: " + operation);
-                        server.sendMessage(FinanceTextMessages.audFailMessage(op.getId()), userId);
+                default:
+                    logger.error("Unsupported op: " + operation);
+                    server.sendMessage(FinanceTextMessages.audFailMessage(op.getId()), userId);
 
-                }
-            } catch (SQLException e) {
-                logger.error(e.getMessage());
-                server.sendMessage(FinanceTextMessages.audFailMessage(op.getId()), userId);
             }
-        } else {
-            logger.error("Unsupported item");
+        } catch (SQLException e) {
+            logger.error(e.getMessage());
             server.sendMessage(FinanceTextMessages.audFailMessage(op.getId()), userId);
         }
 
@@ -140,7 +136,8 @@ public class FinanceModel {
         FinanceDatabase database = new FinanceDatabase(connection);
 
         // TEST CODE
-        if (database.getAllCategorys().size() == 0) {
+        if (database.getAllCategorys().size() == 0 && !conversionStarted) {
+            conversionStarted = true;
             // convert only if not converted yet
             String thomasId = "c572d4e7-da4b-41d8-9c1f-7e9a97657155";
             User thomas = connectionService.getUser(thomasId);

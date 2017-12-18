@@ -36,6 +36,7 @@ public class WorkflowBase {
     @Before
     public void setup() throws SQLException, InterruptedException {
         logger.info("Setup");
+        kings.setId("TestFamilie");
         Connection connection = DriverManager.getConnection("jdbc:sqlite:" + DB_TEST_NAME);
         userDatabase = new UserDatabase(connection);
         model = new FamilyModel();

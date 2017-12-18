@@ -1,6 +1,8 @@
 package database;
 
 import com.koenig.commonModel.Family;
+import com.koenig.commonModel.Item;
+import com.koenig.commonModel.ItemType;
 import com.koenig.commonModel.User;
 import com.koenig.commonModel.database.DatabaseItem;
 
@@ -14,6 +16,18 @@ public class UserDatabase extends Database {
 
     public UserDatabase(Connection connection) {
         super(connection);
+    }
+
+    @Override
+    protected Table getItemTable(Item item) throws SQLException {
+        switch (ItemType.fromItem(item)) {
+            case FAMILY:
+                return familyTable;
+            case USER:
+                return userTable;
+            default:
+                throw new SQLException("Unsupported item in user database");
+        }
     }
 
     public void start() throws SQLException {

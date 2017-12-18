@@ -61,7 +61,7 @@ public class Converter {
 
                 }
                 i++;
-                //logger.info(i + "/" + standingOrders.size());
+                logger.info(i + "/" + standingOrders.size());
             }
 
             logger.info("Converted all standing orders.");
@@ -74,7 +74,7 @@ public class Converter {
                     expensesTable.add(expensesDatabaseItem);
                 }
                 i++;
-                //logger.info(i + "/" + lgaExpenses.size());
+                logger.info(i + "/" + lgaExpenses.size());
             }
 
             logger.info("Converted all expenses.");

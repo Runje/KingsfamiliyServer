@@ -1,6 +1,7 @@
 package database.finance;
 
 import com.koenig.commonModel.Frequency;
+import com.koenig.commonModel.database.DatabaseTable;
 import com.koenig.commonModel.finance.BookkeepingEntry;
 import com.koenig.commonModel.finance.StandingOrder;
 import database.NamedParameterStatement;
@@ -32,7 +33,7 @@ public class StandingOrderTable extends BookkeepingTable<StandingOrder> {
         DateTime endDate = getDateTime(rs, END_DATE);
         Frequency frequency = Frequency.valueOf(rs.getString(FREQUENCY));
         int frequencyFactor = rs.getInt(FREQUENCY_FACTOR);
-        List<String> executedExpenses = getStringList(EXECUTED_EXPENSES);
+        List<String> executedExpenses = DatabaseTable.getStringList(EXECUTED_EXPENSES);
         return new StandingOrder(entry, firstDate, endDate, frequency, frequencyFactor, executedExpenses);
     }
 

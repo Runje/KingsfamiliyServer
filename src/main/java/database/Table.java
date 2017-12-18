@@ -177,7 +177,7 @@ public abstract class Table<T extends Item> extends DatabaseTable<T> {
     }
 
     protected void setStringList(NamedParameterStatement ps, String name, List<String> list) throws SQLException {
-        ps.setString(name, buildStringList(list));
+        ps.setString(name, DatabaseTable.buildStringList(list));
     }
 
 
@@ -260,10 +260,12 @@ public abstract class Table<T extends Item> extends DatabaseTable<T> {
         List<String> columns = new ArrayList<>();
         columns.add(COLUMN_MODIFIED_ID);
         columns.add(COLUMN_MODIFIED_DATE);
+        columns.add(COLUMN_NAME);
         columns.addAll(getColumnNames());
         update(item.getId(), columns.toArray(new String[]{}), (ps -> {
             ps.setString(COLUMN_MODIFIED_ID, userId);
             setDateTime(ps, COLUMN_MODIFIED_DATE, DateTime.now());
+            ps.setString(COLUMN_NAME, item.getName());
             setItem(ps, item);
         }));
 

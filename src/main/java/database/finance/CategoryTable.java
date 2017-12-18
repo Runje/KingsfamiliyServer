@@ -2,6 +2,7 @@ package database.finance;
 
 import com.koenig.commonModel.Category;
 import com.koenig.commonModel.database.DatabaseItem;
+import com.koenig.commonModel.database.DatabaseTable;
 import database.NamedParameterStatement;
 import database.Table;
 
@@ -27,7 +28,7 @@ public class CategoryTable extends Table<Category> {
     @Override
     protected Category getItem(ResultSet rs) throws SQLException {
         String main = rs.getString(COLUMN_NAME);
-        List<String> subs = getStringList(rs.getString(SUBS));
+        List<String> subs = DatabaseTable.getStringList(rs.getString(SUBS));
         return new Category(main, subs);
     }
 
@@ -67,7 +68,7 @@ public class CategoryTable extends Table<Category> {
                         }
                     }
 
-                    if (isNew) {
+                    if (isNew && !sub.isEmpty()) {
                         // add subcategory
                         dbCategory.getItem().addSub(sub);
                         changed = true;
