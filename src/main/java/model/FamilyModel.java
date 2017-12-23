@@ -209,6 +209,7 @@ public class FamilyModel implements OnReceiveMessageListener {
 
     private void addUserToDatabase(String userName, DateTime birthday, String userId) {
         try {
+            if (userName.trim().isEmpty()) throw new SQLException("Empty name not allowed");
             User user = new User(userId, userName.trim(), "", birthday);
             database.addUser(user, userId);
             logger.info("Adding user " + userName + ", Birthday: " + birthday);

@@ -5,9 +5,7 @@ import com.koenig.commonModel.Category;
 import com.koenig.commonModel.Frequency;
 import com.koenig.commonModel.User;
 import com.koenig.commonModel.database.DatabaseItem;
-import com.koenig.commonModel.finance.CostDistribution;
-import com.koenig.commonModel.finance.Expenses;
-import com.koenig.commonModel.finance.StandingOrder;
+import com.koenig.commonModel.finance.*;
 import database.finance.CategoryTable;
 import database.finance.ExpensesTable;
 import database.finance.StandingOrderTable;
@@ -44,6 +42,7 @@ public class Converter {
         Connection connection = DriverManager.getConnection("jdbc:sqlite:" + path);
         try {
             connection.setAutoCommit(false);
+            convertBankAccounts(connection);
             LGAExpensesTable lgaExpensesTable = new LGAExpensesTable(connection);
             List<LGAExpenses> lgaExpenses = lgaExpensesTable.getAll();
             logger.info("Got LGAExpenses: " + lgaExpenses.size());
@@ -78,6 +77,8 @@ public class Converter {
             }
 
             logger.info("Converted all expenses.");
+
+
             connection.commit();
         } catch (Exception e) {
             logger.error("Error on transaction: " + e.getMessage());
@@ -89,6 +90,49 @@ public class Converter {
         }
 
 
+    }
+
+    private void convertBankAccounts(Connection connection) throws SQLException {
+        LGABalanceTable lgaBalanceTable = new LGABalanceTable(connection);
+        ArrayList<LGABalance> lgaBalances = lgaBalanceTable.getAll();
+
+        LGABankAccountTable lgaBankAccountTable = new LGABankAccountTable(connection);
+        ArrayList<LGABankAccount> bankAccounts = lgaBankAccountTable.getAll();
+        logger.info("LGABankaccounts: " + bankAccounts.size());
+        List<BankAccount> accounts = new ArrayList<>(bankAccounts.size());
+        for (LGABankAccount bankAccount : bankAccounts) {
+            List<Balance> balances = getBalancesFor(bankAccount, lgaBalances);
+            accounts.add(new BankAccount(bankAccount.getName(), bankAccount.getBank(), ownerToUserList(bankAccount.getOwner()), balances));
+        }
+        logger.info("All bankaccounts converted");
+    }
+
+    private List<Balance> getBalancesFor(LGABankAccount bankAccount, ArrayList<LGABalance> lgaBalances) {
+        List<Balance> balances = new ArrayList<>();
+        for (LGABalance lgaBalance : lgaBalances) {
+            if (lgaBalance.getBankAccountName().equals(bankAccount.getName()) && lgaBalance.getBankName().equals(bankAccount.getBank())) {
+                balances.add(new Balance((int) (lgaBalance.getBalance() * 100), lgaBalance.getDate()));
+            }
+        }
+        return balances;
+    }
+
+    private List<User> ownerToUserList(String owner) {
+        List<User> result = new ArrayList<>(2);
+        switch (owner) {
+            case "Thomas":
+                result.add(thomasUser);
+                break;
+            case "Milena":
+                result.add(milenaUser);
+                break;
+            case "Alle":
+                result.add(thomasUser);
+                result.add(milenaUser);
+                break;
+        }
+
+        return result;
     }
 
     private DatabaseItem<StandingOrder> convert(LGAStandingOrder lgaStandingOrder) throws SQLException {

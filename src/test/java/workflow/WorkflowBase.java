@@ -49,7 +49,7 @@ public class WorkflowBase {
         userDatabase.addFamily(kings, kings.getId());
 
         FinanceDatabase financeDatabase = new FinanceDatabase(model.getFamilyConnectionService().getConnectionFromUser(thomas.getId()));
-
+        financeDatabase.deleteAllEntrys();
         // add category to prevent converter to start
         financeDatabase.addCategory(new Category("Transport"), thomas.getId());
 
