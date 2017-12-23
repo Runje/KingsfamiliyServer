@@ -2,9 +2,15 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/-2100399312/commonfamily.iml" filepath="$PROJECT_DIR$/.idea/modules/-2100399312/commonfamily.iml" group="commonfamily" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/-1800397334/commonfamily_main.iml" filepath="$PROJECT_DIR$/.idea/modules/-1800397334/commonfamily_main.iml" group="commonfamily" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/-1800397334/commonfamily_test.iml" filepath="$PROJECT_DIR$/.idea/modules/-1800397334/commonfamily_test.iml" group="commonfamily" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/kingsfamiliy.server.iml" filepath="$PROJECT_DIR$/.idea/modules/kingsfamiliy.server.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/kingsfamiliy.server_main.iml" filepath="$PROJECT_DIR$/.idea/modules/kingsfamiliy.server_main.iml" group="kingsfamiliy.server" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/kingsfamiliy.server_test.iml" filepath="$PROJECT_DIR$/.idea/modules/kingsfamiliy.server_test.iml" group="kingsfamiliy.server" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/432444717/tcpcommunication.iml" filepath="$PROJECT_DIR$/.idea/modules/432444717/tcpcommunication.iml" group="tcpcommunication" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/1142571443/tcpcommunication_main.iml" filepath="$PROJECT_DIR$/.idea/modules/1142571443/tcpcommunication_main.iml" group="tcpcommunication" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/1142571443/tcpcommunication_test.iml" filepath="$PROJECT_DIR$/.idea/modules/1142571443/tcpcommunication_test.iml" group="tcpcommunication" />
     </modules>
   </component>
 </project>

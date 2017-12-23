@@ -10,18 +10,19 @@ repositories {
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-    compile 'joda-time:joda-time:2.8'
-    compile 'org.slf4j:slf4j-api:1.7.22'
-    compile 'ch.qos.logback:logback-core:1.1.8'
-    compile 'ch.qos.logback:logback-classic:1.1.8'
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
+    implementation 'joda-time:joda-time:2.8'
+    implementation 'org.slf4j:slf4j-api:1.7.22'
+    implementation 'ch.qos.logback:logback-core:1.1.8'
+    implementation 'ch.qos.logback:logback-classic:1.1.8'
 // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
-    compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.16.1'
-    compile 'com.esotericsoftware:kryo:4.0.1'
+    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.16.1'
+    implementation 'com.esotericsoftware:kryo:4.0.1'
 
-    compile files ('D:/Bibliotheken/AndroidStudioProjects/Utilties/tcpcommunication/build/libs/tcpcommunication.jar')
-
-    compile files('D:/Bibliotheken/AndroidStudioProjects/Kingsfamily/commonfamily/build/libs/commonfamily.jar')
+    //compile files ('D:/Bibliotheken/AndroidStudioProjects/Utilties/tcpcommunication/build/libs/tcpcommunication.jar')
+    implementation project(':tcpcommunication')
+    implementation project(':commonfamily')
+    //compile files('D:/Bibliotheken/AndroidStudioProjects/Kingsfamily/commonfamily/build/libs/commonfamily.jar')
 }
 
 jar {

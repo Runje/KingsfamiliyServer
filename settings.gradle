@@ -1,4 +1,8 @@
 rootProject.name = 'kingsfamiliy.server'
+include 'tcpcommunication'
+project(':tcpcommunication').projectDir = new File('../Utilties/tcpcommunication')
+include ':commonfamily'
+project(':commonfamily').projectDir = new File('../Kingsfamily/commonfamily')
 
 
 

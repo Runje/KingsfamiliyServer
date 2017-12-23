@@ -12,6 +12,8 @@
       <module name="KingsfamiliyLibrary_test" target="1.8" />
       <module name="KingsfamilyLibrary_main" target="1.8" />
       <module name="KingsfamilyLibrary_test" target="1.8" />
+      <module name="tcpcommunication_main" target="1.8" />
+      <module name="tcpcommunication_test" target="1.8" />
       <module name="testlibrary_main" target="1.8" />
       <module name="testlibrary_test" target="1.8" />
     </bytecodeTargetLevel>
