@@ -1,6 +1,7 @@
 package model;
 
 import com.koenig.commonModel.*;
+import com.koenig.commonModel.database.UserService;
 import com.koenig.communication.messages.*;
 import com.koenig.communication.messages.finance.FinanceTextMessages;
 import communication.Server;
@@ -18,11 +19,13 @@ public class FinanceModel {
     private Logger logger = LoggerFactory.getLogger(getClass().getSimpleName());
     private Server server;
     private ConnectionService connectionService;
+    private UserService userService;
     private boolean conversionStarted;
 
-    public FinanceModel(Server server, ConnectionService connectionService) {
+    public FinanceModel(Server server, ConnectionService connectionService, UserService userService) {
         this.server = server;
         this.connectionService = connectionService;
+        this.userService = userService;
     }
 
     public void onReceiveMessage(FamilyMessage message) {
@@ -57,6 +60,9 @@ public class FinanceModel {
                     break;
                 case CATEGORY:
                     updatesMessage = new UpdatesMessage(getFinanceDatabaseFromUser(userId).getCategorysChangesSince(lastSyncDate));
+                    break;
+                case BANKACCOUNT:
+                    updatesMessage = new UpdatesMessage(getFinanceDatabaseFromUser(userId).getBankAccountsChangesSince(lastSyncDate));
                     break;
             }
 
@@ -130,10 +136,10 @@ public class FinanceModel {
     }
 
 
-
-    private FinanceDatabase getFinanceDatabaseFromUser(String userId) throws SQLException {
+    // Synchronized beceause else several conversion are starting at the same time
+    private synchronized FinanceDatabase getFinanceDatabaseFromUser(String userId) throws SQLException {
         Connection connection = connectionService.getConnectionFromUser(userId);
-        FinanceDatabase database = new FinanceDatabase(connection);
+        FinanceDatabase database = new FinanceDatabase(connection, userService);
 
         // TEST CODE
         if (database.getAllCategorys().size() == 0 && !conversionStarted) {

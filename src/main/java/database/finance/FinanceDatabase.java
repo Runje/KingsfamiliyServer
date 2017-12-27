@@ -5,6 +5,8 @@ import com.koenig.commonModel.Item;
 import com.koenig.commonModel.ItemType;
 import com.koenig.commonModel.User;
 import com.koenig.commonModel.database.DatabaseItem;
+import com.koenig.commonModel.database.UserService;
+import com.koenig.commonModel.finance.BankAccount;
 import com.koenig.commonModel.finance.Expenses;
 import com.koenig.commonModel.finance.StandingOrder;
 import database.Database;
@@ -19,21 +21,24 @@ import java.util.List;
 
 public class FinanceDatabase extends Database {
 
+    BankAccountTable bankAccountTable;
     FinanceTransactionTable transactionTable;
     ExpensesTable expensesTable;
     StandingOrderTable standingOrderTable;
     CategoryTable categoryTable;
 
-    public FinanceDatabase(Connection connection) throws SQLException {
+    public FinanceDatabase(Connection connection, UserService userService) throws SQLException {
         super(connection);
         expensesTable = new ExpensesTable(connection);
         standingOrderTable = new StandingOrderTable(connection);
         categoryTable = new CategoryTable(connection);
         transactionTable = new FinanceTransactionTable(connection);
+        bankAccountTable = new BankAccountTable(connection, userService);
         tables.add(expensesTable);
         tables.add(standingOrderTable);
         tables.add(categoryTable);
         tables.add(transactionTable);
+        tables.add(bankAccountTable);
         createAllTables();
     }
 
@@ -46,7 +51,7 @@ public class FinanceDatabase extends Database {
     public void convert(User milena, User thomas) throws SQLException {
         logger.info("Starting conversion...");
 
-        Converter converter = new Converter(expensesTable, standingOrderTable, categoryTable, milena, thomas);
+        Converter converter = new Converter(expensesTable, standingOrderTable, categoryTable, bankAccountTable, milena, thomas);
         converter.convert("D:\\Bibliotheken\\Dokumente\\finances_db_backup_2017.10.11.sqlite");
     }
 
@@ -90,6 +95,11 @@ public class FinanceDatabase extends Database {
         return categoryTable.getChangesSinceDatabaseItems(lastSyncDate);
     }
 
+    public List<DatabaseItem<BankAccount>> getBankAccountsChangesSince(DateTime lastSyncDate) throws SQLException {
+        return bankAccountTable.getChangesSinceDatabaseItems(lastSyncDate);
+    }
+
+
     public void addCategory(Category transport, String userId) throws SQLException {
         categoryTable.addFrom(transport, userId);
     }
@@ -104,6 +114,8 @@ public class FinanceDatabase extends Database {
                 return standingOrderTable;
             case CATEGORY:
                 return categoryTable;
+            case BANKACCOUNT:
+                return bankAccountTable;
             default:
                 throw new SQLException("Unsupported item");
         }

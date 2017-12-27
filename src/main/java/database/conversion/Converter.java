@@ -6,6 +6,7 @@ import com.koenig.commonModel.Frequency;
 import com.koenig.commonModel.User;
 import com.koenig.commonModel.database.DatabaseItem;
 import com.koenig.commonModel.finance.*;
+import database.finance.BankAccountTable;
 import database.finance.CategoryTable;
 import database.finance.ExpensesTable;
 import database.finance.StandingOrderTable;
@@ -27,12 +28,14 @@ public class Converter {
     ExpensesTable expensesTable;
     StandingOrderTable standingOrderTable;
     User milenaUser;
+    private BankAccountTable bankAccountTable;
     User thomasUser;
 
-    public Converter(ExpensesTable expensesTable, StandingOrderTable standingOrderTable, CategoryTable categoryTable, User milenaUser, User thomasUser) {
+    public Converter(ExpensesTable expensesTable, StandingOrderTable standingOrderTable, CategoryTable categoryTable, BankAccountTable bankAccountTable, User milenaUser, User thomasUser) {
         this.expensesTable = expensesTable;
         this.standingOrderTable = standingOrderTable;
         this.categoryTable = categoryTable;
+        this.bankAccountTable = bankAccountTable;
         this.thomasUser = thomasUser;
         this.milenaUser = milenaUser;
     }
@@ -42,7 +45,11 @@ public class Converter {
         Connection connection = DriverManager.getConnection("jdbc:sqlite:" + path);
         try {
             connection.setAutoCommit(false);
-            convertBankAccounts(connection);
+            List<DatabaseItem<BankAccount>> accounts = convertBankAccounts(connection);
+            for (DatabaseItem account : accounts) {
+                bankAccountTable.add(account);
+            }
+            logger.info("All bankaccounts converted");
             LGAExpensesTable lgaExpensesTable = new LGAExpensesTable(connection);
             List<LGAExpenses> lgaExpenses = lgaExpensesTable.getAll();
             logger.info("Got LGAExpenses: " + lgaExpenses.size());
@@ -92,19 +99,22 @@ public class Converter {
 
     }
 
-    private void convertBankAccounts(Connection connection) throws SQLException {
+    private List<DatabaseItem<BankAccount>> convertBankAccounts(Connection connection) throws SQLException {
         LGABalanceTable lgaBalanceTable = new LGABalanceTable(connection);
         ArrayList<LGABalance> lgaBalances = lgaBalanceTable.getAll();
 
         LGABankAccountTable lgaBankAccountTable = new LGABankAccountTable(connection);
         ArrayList<LGABankAccount> bankAccounts = lgaBankAccountTable.getAll();
         logger.info("LGABankaccounts: " + bankAccounts.size());
-        List<BankAccount> accounts = new ArrayList<>(bankAccounts.size());
+        List<DatabaseItem<BankAccount>> accounts = new ArrayList<>(bankAccounts.size());
         for (LGABankAccount bankAccount : bankAccounts) {
             List<Balance> balances = getBalancesFor(bankAccount, lgaBalances);
-            accounts.add(new BankAccount(bankAccount.getName(), bankAccount.getBank(), ownerToUserList(bankAccount.getOwner()), balances));
+            BankAccount account = new BankAccount(bankAccount.getName(), bankAccount.getBank(), ownerToUserList(bankAccount.getOwner()), balances);
+            DatabaseItem<BankAccount> databaseItem = new DatabaseItem<>(account, bankAccount.getInsertDate(), bankAccount.getLastModifiedDate(), bankAccount.isDeleted(), bankAccount.getCreatedFrom(), bankAccount.getLastChangeFrom());
+            accounts.add(databaseItem);
         }
-        logger.info("All bankaccounts converted");
+
+        return accounts;
     }
 
     private List<Balance> getBalancesFor(LGABankAccount bankAccount, ArrayList<LGABalance> lgaBalances) {

@@ -1,6 +1,7 @@
 package database;
 
 import com.koenig.commonModel.Item;
+import com.koenig.commonModel.User;
 import com.koenig.commonModel.database.DatabaseItem;
 import com.koenig.commonModel.database.DatabaseTable;
 import org.joda.time.DateTime;
@@ -325,6 +326,14 @@ public abstract class Table<T extends Item> extends DatabaseTable<T> {
     public List<T> getFromName(String name) throws SQLException {
         return toItemList(getDatabaseItemsFromName(name));
     }
+
+
+    protected void setUsers(List<User> users, NamedParameterStatement ps, String columnName) throws SQLException {
+        String result = usersToId(users);
+        ps.setString(columnName, result);
+    }
+
+
 
     protected interface ParameterSetter {
         void set(NamedParameterStatement ps) throws SQLException;

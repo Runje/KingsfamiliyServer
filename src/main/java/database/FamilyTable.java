@@ -3,23 +3,23 @@ package database;
 import com.koenig.commonModel.Family;
 import com.koenig.commonModel.User;
 import com.koenig.commonModel.database.DatabaseItem;
+import com.koenig.commonModel.database.UserService;
 import com.koenig.communication.messages.FamilyMessage;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class FamilyTable extends Table<Family> {
     public static final String NAME = "family_table";
     public static final String USERS = "users";
-    private final UserTable userTable;
+    private final UserService userService;
 
-    public FamilyTable(Connection connection, UserTable userTable) {
+    public FamilyTable(Connection connection, UserService userService) {
         super(connection);
-        this.userTable = userTable;
+        this.userService = userService;
     }
 
     @Override
@@ -30,22 +30,10 @@ public class FamilyTable extends Table<Family> {
     @Override
     protected Family getItem(ResultSet rs) throws SQLException {
         String usersText = rs.getString(USERS);
-        List<User> users = new ArrayList<>();
-        if (!usersText.isEmpty()) {
-            String[] userIds = usersText.split(FamilyMessage.SEPARATOR);
-
-
-            for (String id :
-                    userIds) {
-                users.add(userTable.getFromId(id));
-            }
-        }
-
+        List<User> users = getUsers(userService, usersText);
         String family = rs.getString(COLUMN_NAME);
-
         return new Family(family, users);
     }
-
 
     @Override
     protected String getTableSpecificCreateStatement() {
@@ -54,18 +42,7 @@ public class FamilyTable extends Table<Family> {
 
     @Override
     protected void setItem(NamedParameterStatement ps, Family item) throws SQLException {
-        setUsers(item.getUsers(), ps);
-    }
-
-    private void setUsers(List<User> users, NamedParameterStatement ps) throws SQLException {
-        StringBuilder builder = new StringBuilder();
-        for (User user : users) {
-            builder.append(user.getId());
-            builder.append(FamilyMessage.SEPARATOR);
-        }
-
-        String result = users.size() > 0 ? builder.substring(0, builder.length() - 1) : "";
-        ps.setString(USERS, result);
+        setUsers(item.getUsers(), ps, USERS);
     }
 
     @Override

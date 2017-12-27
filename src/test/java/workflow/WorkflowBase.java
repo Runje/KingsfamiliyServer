@@ -1,10 +1,10 @@
 package workflow;
 
 import com.koenig.commonModel.Category;
-import com.koenig.commonModel.Family;
 import com.koenig.commonModel.User;
 import com.koenig.communication.messages.FamilyMessage;
 import com.koenig.communication.messages.TextMessage;
+import database.DatabaseHelper;
 import database.UserDatabase;
 import database.finance.FinanceDatabase;
 import model.FamilyModel;
@@ -18,51 +18,41 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Arrays;
 
 public class WorkflowBase {
-    protected final String king = "König";
     protected Logger logger = LoggerFactory.getLogger(getClass().getSimpleName());
     protected UserDatabase userDatabase;
-    protected String DB_TEST_NAME = "UserTest.sqlite";
     protected FamilyModel model;
     protected Simulator simulatorMilena;
     protected Simulator simulatorThomas;
-    protected User milena = new User("Milena", king, new DateTime(1987, 8, 10, 0, 0));
-    protected User thomas = new User("Thomas", king, new DateTime(1987, 6, 14, 0, 0));
     protected User simulatorUser;
-    protected Family kings = new Family(king, Arrays.asList(milena, thomas));
+
 
     @Before
     public void setup() throws SQLException, InterruptedException {
         logger.info("Setup");
-        kings.setId("TestFamilie");
-        Connection connection = DriverManager.getConnection("jdbc:sqlite:" + DB_TEST_NAME);
-        userDatabase = new UserDatabase(connection);
+
+        Connection connection = DriverManager.getConnection("jdbc:sqlite:" + DatabaseHelper.USERDB_TEST);
+        userDatabase = DatabaseHelper.createUserDatabaseWithThomasAndMilena();
         model = new FamilyModel();
         model.start(userDatabase);
 
 
-        userDatabase.deleteAllEntrys();
-        userDatabase.addUser(thomas, thomas.getId());
-        userDatabase.addUser(milena, milena.getId());
-        userDatabase.addFamily(kings, kings.getId());
-
-        FinanceDatabase financeDatabase = new FinanceDatabase(model.getFamilyConnectionService().getConnectionFromUser(thomas.getId()));
+        FinanceDatabase financeDatabase = new FinanceDatabase(model.getFamilyConnectionService().getConnectionFromUser(DatabaseHelper.thomas.getId()), userDatabase.getUserService());
         financeDatabase.deleteAllEntrys();
         // add category to prevent converter to start
-        financeDatabase.addCategory(new Category("Transport"), thomas.getId());
+        financeDatabase.addCategory(new Category("Transport"), DatabaseHelper.thomas.getId());
 
 
-        simulatorMilena = new Simulator(milena.getId());
-        simulatorThomas = new Simulator(thomas.getId());
+        simulatorMilena = new Simulator(DatabaseHelper.milena.getId());
+        simulatorThomas = new Simulator(DatabaseHelper.thomas.getId());
         simulatorMilena.connect();
         simulatorThomas.connect();
         waitTilConnected(simulatorMilena);
         waitTilConnected(simulatorThomas);
 
 
-        simulatorUser = new User(simulatorMilena.getId(), "Simulator", king, new DateTime(1987, 8, 10, 0, 0));
+        simulatorUser = new User(simulatorMilena.getId(), "Simulator", DatabaseHelper.king, new DateTime(1987, 8, 10, 0, 0));
     }
 
     protected void waitTilConnected(Simulator simulator) throws InterruptedException {

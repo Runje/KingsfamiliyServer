@@ -37,7 +37,7 @@ public class FamilyModel implements OnReceiveMessageListener {
         database.start();
         server = new Server(ConnectUtils.PORT, this);
         familyConnectionService = new FamilyConnectionService(database);
-        financeModel = new FinanceModel(server, getFamilyConnectionService());
+        financeModel = new FinanceModel(server, getFamilyConnectionService(), userDatabase.getUserService());
         server.start();
         String thomasId = "c572d4e7-da4b-41d8-9c1f-7e9a97657155";
         User thomas = database.getUserById(thomasId);

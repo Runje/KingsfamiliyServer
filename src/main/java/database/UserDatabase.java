@@ -5,6 +5,7 @@ import com.koenig.commonModel.Item;
 import com.koenig.commonModel.ItemType;
 import com.koenig.commonModel.User;
 import com.koenig.commonModel.database.DatabaseItem;
+import com.koenig.commonModel.database.UserService;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -32,13 +33,17 @@ public class UserDatabase extends Database {
 
     public void start() throws SQLException {
         userTable = new UserTable(connection);
-        familyTable = new FamilyTable(connection, userTable);
+        familyTable = new FamilyTable(connection, getUserService());
         tables.add(userTable);
         tables.add(familyTable);
         createAllTables();
 
         // TEST CODE
 
+    }
+
+    public UserService getUserService() {
+        return id -> userTable.getFromId(id);
     }
 
     public void stop() throws SQLException {

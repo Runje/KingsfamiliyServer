@@ -26,7 +26,7 @@ public class DatabaseTest {
         database = new UserDatabase(connection);
         database.start();
         database.deleteAllEntrys();
-        financeDatabase = new FinanceDatabase(connection);
+        financeDatabase = new FinanceDatabase(connection, database.getUserService());
         financeDatabase.deleteAllEntrys();
 
     }
