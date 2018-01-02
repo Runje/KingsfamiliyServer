@@ -1,7 +1,6 @@
 package model;
 
 
-import com.koenig.StringFormats;
 import database.UserDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +18,6 @@ public class Main
     private static final String DB_NAME = "familyUsers.sqlite";
     public static void main(String[] args) throws SQLException
     {
-        StringFormats.init();
         // create a database connection
         Connection connection = DriverManager.getConnection("jdbc:sqlite:" + DB_NAME);
         UserDatabase database = new UserDatabase(connection);

@@ -51,18 +51,19 @@ public class FinanceModel {
     private void sendUpdates(DateTime lastSyncDate, ItemType updateType, String userId) {
         try {
             UpdatesMessage updatesMessage = null;
+            FinanceDatabase financeDatabaseFromUser = getFinanceDatabaseFromUser(userId);
             switch (updateType) {
                 case EXPENSES:
-                    updatesMessage = new UpdatesMessage(getFinanceDatabaseFromUser(userId).getExpensesChangesSince(lastSyncDate));
+                    updatesMessage = new UpdatesMessage(financeDatabaseFromUser.getExpensesChangesSince(lastSyncDate));
                     break;
                 case STANDING_ORDER:
-                    updatesMessage = new UpdatesMessage(getFinanceDatabaseFromUser(userId).getStandingOrderChangesSince(lastSyncDate));
+                    updatesMessage = new UpdatesMessage(financeDatabaseFromUser.getStandingOrderChangesSince(lastSyncDate));
                     break;
                 case CATEGORY:
-                    updatesMessage = new UpdatesMessage(getFinanceDatabaseFromUser(userId).getCategorysChangesSince(lastSyncDate));
+                    updatesMessage = new UpdatesMessage(financeDatabaseFromUser.getCategorysChangesSince(lastSyncDate));
                     break;
                 case BANKACCOUNT:
-                    updatesMessage = new UpdatesMessage(getFinanceDatabaseFromUser(userId).getBankAccountsChangesSince(lastSyncDate));
+                    updatesMessage = new UpdatesMessage(financeDatabaseFromUser.getBankAccountsChangesSince(lastSyncDate));
                     break;
             }
 
@@ -79,51 +80,56 @@ public class FinanceModel {
     private void processOperation(Operation op, String userId) {
         Item item = op.getItem();
         try {
-            if (getFinanceDatabaseFromUser(userId).doesTransactionExist(op.getId())) {
-                logger.info("Transaction already exists: " + op.getId());
-                return;
-            }
-        } catch (SQLException e) {
-            logger.error("Error while checking transaction");
-        }
-
-        boolean success = false;
-        Operator operation = op.getOperator();
-        try {
-            FinanceDatabase financeDatabaseFromUser = getFinanceDatabaseFromUser(userId);
-            switch (operation) {
-                case ADD:
-                    financeDatabaseFromUser.addItem(op.getItem(), userId);
-                    success = true;
-                    break;
-                case DELETE:
-                    financeDatabaseFromUser.deleteItem(op.getItem(), userId);
-                    success = true;
-                    break;
-
-                case UPDATE:
-                    financeDatabaseFromUser.updateItem(op.getItem(), userId);
-                    success = true;
-                    break;
-
-                default:
-                    logger.error("Unsupported op: " + operation);
-                    server.sendMessage(FinanceTextMessages.audFailMessage(op.getId()), userId);
-
-            }
-        } catch (SQLException e) {
-            logger.error(e.getMessage());
-            server.sendMessage(FinanceTextMessages.audFailMessage(op.getId()), userId);
-        }
-
-        if (success) {
-            server.sendMessage(FinanceTextMessages.audSuccessMessage(op.getId()), userId);
+            FinanceDatabase databaseFromUser = getFinanceDatabaseFromUser(userId);
             try {
-                getFinanceDatabaseFromUser(userId).addTransaction(op.getId(), userId);
+                if (databaseFromUser.doesTransactionExist(op.getId())) {
+                    logger.info("Transaction already exists: " + op.getId());
+                    return;
+                }
             } catch (SQLException e) {
-                logger.error("Error while adding operation: " + e.getMessage());
+                logger.error("Error while checking transaction");
             }
 
+            boolean success = false;
+            Operator operation = op.getOperator();
+            try {
+                FinanceDatabase financeDatabaseFromUser = databaseFromUser;
+                switch (operation) {
+                    case ADD:
+                        financeDatabaseFromUser.addItem(op.getItem(), userId);
+                        success = true;
+                        break;
+                    case DELETE:
+                        financeDatabaseFromUser.deleteItem(op.getItem(), userId);
+                        success = true;
+                        break;
+
+                    case UPDATE:
+                        financeDatabaseFromUser.updateItem(op.getItem(), userId);
+                        success = true;
+                        break;
+
+                    default:
+                        logger.error("Unsupported op: " + operation);
+                        server.sendMessage(FinanceTextMessages.audFailMessage(op.getId()), userId);
+
+                }
+            } catch (SQLException e) {
+                logger.error(e.getMessage());
+                server.sendMessage(FinanceTextMessages.audFailMessage(op.getId()), userId);
+            }
+
+            if (success) {
+                server.sendMessage(FinanceTextMessages.audSuccessMessage(op.getId()), userId);
+                try {
+                    databaseFromUser.addTransaction(op.getId(), userId);
+                } catch (SQLException e) {
+                    logger.error("Error while adding operation: " + e.getMessage());
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Error getting database from user: " + e.getMessage());
+            server.sendMessage(FinanceTextMessages.audFailMessage(op.getId()), userId);
         }
     }
 
