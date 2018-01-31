@@ -18,6 +18,7 @@ public class Main
     private static final String DB_NAME = "familyUsers.sqlite";
     public static void main(String[] args) throws SQLException
     {
+
         // create a database connection
         Connection connection = DriverManager.getConnection("jdbc:sqlite:" + DB_NAME);
         UserDatabase database = new UserDatabase(connection);

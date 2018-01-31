@@ -59,7 +59,7 @@ public class LGAExpensesTable {
     public ArrayList<LGAExpenses> getAll() throws SQLException {
         ArrayList<LGAExpenses> expenses = new ArrayList<>();
 
-        String selectQuery = "SELECT * FROM " + TABLE_NAME;
+        String selectQuery = "SELECT * FROM " + TABLE_NAME + " ORDER BY " + KEY_DATE + " ASC";
 
         NamedParameterStatement statement = new NamedParameterStatement(connection, selectQuery);
 

@@ -40,7 +40,7 @@ public class Server extends SocketChannelTCPServer implements OnReceiveBytesFrom
     }
 
     @Override
-    public void onReceiveBytes(byte[] bytes, SocketChannel socketChannel)
+    public synchronized void onReceiveBytes(byte[] bytes, SocketChannel socketChannel)
     {
         logger.info("Receive bytes: " + bytes.length);
         FamilyMessage msg = Parser.parse(ByteBuffer.wrap(bytes));

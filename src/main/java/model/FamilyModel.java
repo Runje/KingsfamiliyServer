@@ -69,7 +69,7 @@ public class FamilyModel implements OnReceiveMessageListener {
 
 
     @Override
-    public void onReceiveMessage(FamilyMessage message) {
+    public synchronized void onReceiveMessage(FamilyMessage message) {
         try
         {
             logger.info("Received message: " + message.getName());

@@ -21,7 +21,7 @@ public class UserDatabase extends Database {
 
     @Override
     protected Table getItemTable(Item item) throws SQLException {
-        switch (ItemType.fromItem(item)) {
+        switch (ItemType.Companion.fromItem(item)) {
             case FAMILY:
                 return familyTable;
             case USER:

@@ -100,6 +100,11 @@ public abstract class Database {
         }
     }
 
+    public boolean itemExists(Item item) throws SQLException {
+
+        return getItemTable(item).doesItemExist(item.getId());
+    }
+
 
     public interface Transaction {
         void run() throws SQLException;
