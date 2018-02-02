@@ -140,7 +140,7 @@ class Converter(internal var expensesTable: ExpensesTable, internal var standing
         val name = lgaStandingOrder.name
         val (category, subcategory) = getCategory(name, lgaStandingOrder.category)
         val costs = (lgaStandingOrder.costs * 100).toInt()
-        val costDistribution = calcCostDistribution(lgaStandingOrder.who, lgaStandingOrder.user, costs)
+        val costDistribution = calcCostDistribution(lgaStandingOrder.who, lgaStandingOrder.user, costs, lgaStandingOrder.category.equals("Überweisung"))
         val firstDate = lgaStandingOrder.firstDate
         val endDate = lgaStandingOrder.lastDate
         val frequency = lgaToFrequency(lgaStandingOrder.lgaFrequency)
@@ -229,7 +229,7 @@ class Converter(internal var expensesTable: ExpensesTable, internal var standing
         val (category, subCategory) = getCategory(name, lgaExpenses.category)
 
         val costs = (lgaExpenses.costs * 100).toInt()
-        val costDistribution = calcCostDistribution(lgaExpenses.who, lgaExpenses.user, costs)
+        val costDistribution = calcCostDistribution(lgaExpenses.who, lgaExpenses.user, costs, isTransaction = lgaExpenses.category.equals("Überweisung"))
         val date = lgaExpenses.date
         val standingOrder = ""
 
@@ -259,44 +259,61 @@ class Converter(internal var expensesTable: ExpensesTable, internal var standing
         return DatabaseItem(expenses, insertDate, modifiedDate, deleted, insertId, modifiedId)
     }
 
-    private fun calcCostDistribution(who: String, user: String, costsInCent: Int): CostDistribution {
+    private fun calcCostDistribution(who: String, user: String, costsInCent: Int, isTransaction: Boolean): CostDistribution {
 
         val costDistribution = CostDistribution()
-        when (who) {
-            "Thomas" -> when (user) {
-                "Thomas" -> costDistribution.putCosts(thomasUser, costsInCent, costsInCent)
-                "Milena" -> {
-                    costDistribution.putCosts(thomasUser, costsInCent, 0)
-                    costDistribution.putCosts(milenaUser, 0, costsInCent)
-                }
-                "Alle" -> {
-                    costDistribution.putCosts(thomasUser, costsInCent, FamilyUtils.getHalfRoundDown(costsInCent))
-                    costDistribution.putCosts(milenaUser, 0, FamilyUtils.getHalfRoundUp(costsInCent))
-                }
-            }
-            "Milena" -> when (user) {
-                "Milena" -> costDistribution.putCosts(milenaUser, costsInCent, costsInCent)
-                "Thomas" -> {
+        if (isTransaction) {
+            if (who == "Alle" && user == "Thomas") {
+                costDistribution.putCosts(thomasUser, -costsInCent / 2, 0)
+                costDistribution.putCosts(milenaUser, costsInCent / 2, 0)
+            } else if (who == "Milena") {
+                if (user == "Thomas") {
+                    costDistribution.putCosts(thomasUser, -costsInCent, 0)
                     costDistribution.putCosts(milenaUser, costsInCent, 0)
-                    costDistribution.putCosts(thomasUser, 0, costsInCent)
+                } else if (user == "Alle") {
+                    costDistribution.putCosts(thomasUser, -costsInCent / 2, 0)
+                    costDistribution.putCosts(milenaUser, costsInCent / 2, 0)
                 }
-                "Alle" -> {
-                    costDistribution.putCosts(milenaUser, costsInCent, FamilyUtils.getHalfRoundDown(costsInCent))
-                    costDistribution.putCosts(thomasUser, 0, FamilyUtils.getHalfRoundUp(costsInCent))
-                }
+
+
             }
-            "Alle" -> when (user) {
-                "Thomas" -> {
-                    costDistribution.putCosts(thomasUser, FamilyUtils.getHalfRoundUp(costsInCent), costsInCent)
-                    costDistribution.putCosts(milenaUser, FamilyUtils.getHalfRoundDown(costsInCent), 0)
+        } else {
+            when (who) {
+                "Thomas" -> when (user) {
+                    "Thomas" -> costDistribution.putCosts(thomasUser, costsInCent, costsInCent)
+                    "Milena" -> {
+                        costDistribution.putCosts(thomasUser, costsInCent, 0)
+                        costDistribution.putCosts(milenaUser, 0, costsInCent)
+                    }
+                    "Alle" -> {
+                        costDistribution.putCosts(thomasUser, costsInCent, FamilyUtils.getHalfRoundDown(costsInCent))
+                        costDistribution.putCosts(milenaUser, 0, FamilyUtils.getHalfRoundUp(costsInCent))
+                    }
                 }
-                "Milena" -> {
-                    costDistribution.putCosts(milenaUser, FamilyUtils.getHalfRoundUp(costsInCent), costsInCent)
-                    costDistribution.putCosts(thomasUser, FamilyUtils.getHalfRoundDown(costsInCent), 0)
+                "Milena" -> when (user) {
+                    "Milena" -> costDistribution.putCosts(milenaUser, costsInCent, costsInCent)
+                    "Thomas" -> {
+                        costDistribution.putCosts(milenaUser, costsInCent, 0)
+                        costDistribution.putCosts(thomasUser, 0, costsInCent)
+                    }
+                    "Alle" -> {
+                        costDistribution.putCosts(milenaUser, costsInCent, FamilyUtils.getHalfRoundDown(costsInCent))
+                        costDistribution.putCosts(thomasUser, 0, FamilyUtils.getHalfRoundUp(costsInCent))
+                    }
                 }
-                "Alle" -> {
-                    costDistribution.putCosts(thomasUser, FamilyUtils.getHalfRoundUp(costsInCent), FamilyUtils.getHalfRoundUp(costsInCent))
-                    costDistribution.putCosts(milenaUser, FamilyUtils.getHalfRoundDown(costsInCent), FamilyUtils.getHalfRoundDown(costsInCent))
+                "Alle" -> when (user) {
+                    "Thomas" -> {
+                        costDistribution.putCosts(thomasUser, FamilyUtils.getHalfRoundUp(costsInCent), costsInCent)
+                        costDistribution.putCosts(milenaUser, FamilyUtils.getHalfRoundDown(costsInCent), 0)
+                    }
+                    "Milena" -> {
+                        costDistribution.putCosts(milenaUser, FamilyUtils.getHalfRoundUp(costsInCent), costsInCent)
+                        costDistribution.putCosts(thomasUser, FamilyUtils.getHalfRoundDown(costsInCent), 0)
+                    }
+                    "Alle" -> {
+                        costDistribution.putCosts(thomasUser, FamilyUtils.getHalfRoundUp(costsInCent), FamilyUtils.getHalfRoundUp(costsInCent))
+                        costDistribution.putCosts(milenaUser, FamilyUtils.getHalfRoundDown(costsInCent), FamilyUtils.getHalfRoundDown(costsInCent))
+                    }
                 }
             }
         }
