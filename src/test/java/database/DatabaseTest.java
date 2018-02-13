@@ -44,7 +44,7 @@ public class DatabaseTest {
                 database.startTransaction(() -> {
                             try {
                                 for (int i = 0; i < n; i++) {
-                                    database.addUser(new User("Name" + n, "Family" + n, new DateTime(n)), "id" + n);
+                                    database.addUser(new User("Name" + i, "Family" + i, new DateTime(i)), "id" + i);
                                 }
                             } catch (SQLException e) {
                                 e.printStackTrace();
@@ -66,7 +66,7 @@ public class DatabaseTest {
             public void run() {
                 try {
                     for (int i = 0; i < n; i++) {
-                        database.addUser(new User("Name" + (n + m), "Family" + (n + m), new DateTime((n + m))), "id" + (n + m));
+                        database.addUser(new User("Name" + (n + i), "Family" + (n + i), new DateTime((n + i))), "id" + (n + i));
                     }
                 } catch (SQLException e) {
                     e.printStackTrace();
@@ -86,7 +86,7 @@ public class DatabaseTest {
 
         for (User user : allUser) {
             // no user from thread 1 should be in the userDatabase
-            Assert.assertTrue(user.getBirthday().getMillis() > n);
+            Assert.assertTrue(user.getBirthday().getMillis() >= n);
         }
     }
 

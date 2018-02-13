@@ -6,6 +6,9 @@ import com.koenig.commonModel.Frequency
 import com.koenig.commonModel.User
 import com.koenig.commonModel.database.DatabaseItem
 import com.koenig.commonModel.finance.*
+import com.koenig.commonModel.finance.features.StandingOrderExecutor
+import database.ExpensesDbRepository
+import database.StandingOrderDbRepository
 import database.finance.BankAccountTable
 import database.finance.CategoryTable
 import database.finance.ExpensesTable
@@ -62,7 +65,8 @@ class Converter(internal var expensesTable: ExpensesTable, internal var standing
                 check(!lga.date.isBefore(lastDate))
                 lastDate = lga.date
                 // TODO: deleteFrom duplicates(same name, same date, same value
-                if (!expensesDatabaseItem.isDeleted && lga.name != "Ausgleich") {
+                // only add if not deleted or deleted and is standing order and add no "ausgleichs"
+                if (!expensesDatabaseItem.isDeleted || !expensesDatabaseItem.item.standingOrder.isBlank() && lga.name != "Ausgleich") {
                     expensesTable.add(expensesDatabaseItem)
                 }
                 i++
@@ -73,6 +77,13 @@ class Converter(internal var expensesTable: ExpensesTable, internal var standing
 
 
             connection.commit()
+
+            // consistency check:
+            val executor = StandingOrderExecutor(StandingOrderDbRepository(standingOrderTable), ExpensesDbRepository(expensesTable))
+            executor.executeForAll()
+            val result = executor.consistencyCheck()
+            logger.info("Standing Order constistency check result: $result")
+
         } catch (e: Exception) {
             logger.error("Error on transaction: " + e.message)
             connection.rollback()

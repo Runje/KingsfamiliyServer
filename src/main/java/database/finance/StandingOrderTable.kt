@@ -50,7 +50,7 @@ class StandingOrderTable(connection: Connection) : BookkeepingTable<StandingOrde
     fun addExpensesToStandingOrders(standingOrderId: String, expensesId: String, dateTime: DateTime) {
         val standingOrder = getFromId(standingOrderId)
         standingOrder?.executedExpenses?.set(dateTime, expensesId)
-        update(standingOrderId, EXECUTED_EXPENSES) { ps: NamedParameterStatement -> ps.setBytes(EXECUTED_EXPENSES, Byteable.getBytes(standingOrder!!.executedExpenses)) }
+        update(standingOrderId, EXECUTED_EXPENSES, { ps: NamedParameterStatement -> ps.setBytes(EXECUTED_EXPENSES, Byteable.getBytes(standingOrder!!.executedExpenses)) })
     }
 
     companion object {

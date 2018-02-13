@@ -155,11 +155,10 @@ abstract class Table<T : Item>(protected var connection: Connection) : DatabaseT
         try {
 
             var item: DatabaseItem<T>? = null
-            val selectQuery = "SELECT * FROM " + tableName + " WHERE " + DatabaseTable.COLUMN_DELETED + " = :" + DatabaseTable.COLUMN_DELETED + " AND " + DatabaseTable.COLUMN_ID + " = :" + DatabaseTable.COLUMN_ID
+            val selectQuery = "SELECT * FROM " + tableName + " WHERE " + DatabaseTable.COLUMN_ID + " = :" + DatabaseTable.COLUMN_ID
 
             val statement = NamedParameterStatement(connection, selectQuery)
-            // TODO: only undeleted?
-            statement.setInt(DatabaseTable.COLUMN_DELETED, DatabaseTable.FALSE)
+
             statement.setString(DatabaseTable.COLUMN_ID, id)
             val rs = statement.executeQuery()
             while (rs.next()) {
@@ -231,7 +230,7 @@ abstract class Table<T : Item>(protected var connection: Connection) : DatabaseT
 
 
     @Throws(SQLException::class)
-    override fun deleteFrom(itemId: String, userId: String) {
+    fun deleteFrom(itemId: String, userId: String) {
         update(itemId, arrayOf(DatabaseTable.COLUMN_DELETED, DatabaseTable.COLUMN_MODIFIED_ID, DatabaseTable.COLUMN_MODIFIED_DATE), { ps ->
             setBool(ps, DatabaseTable.COLUMN_DELETED, true)
             ps.setString(DatabaseTable.COLUMN_MODIFIED_ID, userId)
@@ -240,7 +239,7 @@ abstract class Table<T : Item>(protected var connection: Connection) : DatabaseT
     }
 
     @Throws(SQLException::class)
-    override fun updateFrom(item: T, userId: String) {
+    fun updateFrom(item: T, userId: String) {
         val columns = ArrayList<String>()
         columns.add(DatabaseTable.COLUMN_MODIFIED_ID)
         columns.add(DatabaseTable.COLUMN_MODIFIED_DATE)

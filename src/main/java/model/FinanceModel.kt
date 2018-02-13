@@ -15,8 +15,24 @@ import java.sql.SQLException
 
 
 class FinanceModel(private val server: Server, private val connectionService: ConnectionService, private val userService: UserService) {
-    private val logger = LoggerFactory.getLogger(javaClass.simpleName)
     private var conversionStarted: Boolean = false
+
+    init {
+        val thomasId = "c572d4e7-da4b-41d8-9c1f-7e9a97657155"
+        val database = getFinanceDatabaseFromUser(thomasId)
+        // TEST CODE
+        if (database.allCategorys.isEmpty() && !conversionStarted) {
+            conversionStarted = true
+            // convert only if not converted yet
+
+            val thomas = connectionService.getUser(thomasId)
+            val milenaId = "c6540de0-46bb-42cd-939b-ce52677fa19d"
+            val milena = connectionService.getUser(milenaId)
+            database.convert(milena, thomas)
+        }
+    }
+
+    private val logger = LoggerFactory.getLogger(javaClass.simpleName)
 
     fun onReceiveMessage(message: FamilyMessage) {
         val userId = message.fromId
@@ -135,16 +151,7 @@ class FinanceModel(private val server: Server, private val connectionService: Co
         val connection = connectionService.getConnectionFromUser(userId)
         val database = FinanceDatabase(connection, userService)
 
-        // TEST CODE
-        if (database.allCategorys.isEmpty() && !conversionStarted) {
-            conversionStarted = true
-            // convert only if not converted yet
-            val thomasId = "c572d4e7-da4b-41d8-9c1f-7e9a97657155"
-            val thomas = connectionService.getUser(thomasId)
-            val milenaId = "c6540de0-46bb-42cd-939b-ce52677fa19d"
-            val milena = connectionService.getUser(milenaId)
-            database.convert(milena, thomas)
-        }
+
         return database
     }
 

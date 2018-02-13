@@ -18,7 +18,7 @@ dependencies {
 // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
     implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.16.1'
     implementation 'com.esotericsoftware:kryo:4.0.1'
-
+    implementation 'io.reactivex.rxjava2:rxjava:2.1.8'
     //compile files ('D:/Bibliotheken/AndroidStudioProjects/Utilties/tcpcommunication/build/libs/tcpcommunication.jar')
     implementation project(':tcpcommunication')
     implementation project(':commonfamily')
