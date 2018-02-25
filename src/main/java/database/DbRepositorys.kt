@@ -43,7 +43,11 @@ abstract class DbRepository<T : Item>(val table: Table<T>) : Repository<T> {
     }
 }
 
-class ExpensesDbRepository(expensesTable: ExpensesTable) : ExpensesRepository, DbRepository<Expenses>(expensesTable)
+class ExpensesDbRepository(private val expensesTable: ExpensesTable) : ExpensesRepository, DbRepository<Expenses>(expensesTable) {
+    override val compensations: Map<DateTime, Expenses>
+        get() = expensesTable.compensations
+}
+
 class StandingOrderDbRepository(val standingOrderTable: StandingOrderTable) : StandingOrderRepository, DbRepository<StandingOrder>(standingOrderTable) {
     override fun addExpensesToStandingOrders(standingOrderId: String, expensesId: String, dateTime: DateTime) {
         standingOrderTable.addExpensesToStandingOrders(standingOrderId, expensesId, dateTime)

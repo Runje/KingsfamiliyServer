@@ -63,7 +63,7 @@ abstract class BookkeepingTable<T : BookkeepingEntry>(connection: Connection) : 
         ps.setString(CATEGORY, item.category)
         ps.setString(SUBCATEGORY, item.subCategory)
         ps.setInt(COSTS, item.costs)
-        ps.setBytes(COSTDISTRIBUTION, item.getCostDistribution().bytes)
+        ps.setBytes(COSTDISTRIBUTION, item.costDistribution.bytes)
         setBookkeepingItem(ps, item)
     }
 

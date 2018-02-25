@@ -315,6 +315,15 @@ abstract class Table<T : Item>(protected var connection: Connection) : DatabaseT
         return toItemList(getDatabaseItemsFromName(name))
     }
 
+    fun getWith(condition: String, setter: (NamedParameterStatement) -> Unit): List<DatabaseItem<T>> {
+        return runInLockWithResult {
+            val selectQuery = "SELECT * FROM " + tableName + " WHERE " + DatabaseTable.COLUMN_DELETED + " = ? AND " + condition
+            val statement = NamedParameterStatement(connection, selectQuery)
+            statement.setInt(DatabaseTable.COLUMN_DELETED, DatabaseTable.FALSE)
+            setter.invoke(statement)
+            createListFromStatement(statement)
+        }
+    }
 
     @Throws(SQLException::class)
     protected fun setUsers(users: List<User>, ps: NamedParameterStatement, columnName: String) {
@@ -364,5 +373,7 @@ abstract class Table<T : Item>(protected var connection: Connection) : DatabaseT
         fun getNamedParameter(parameter: String): String {
             return parameter + " = :" + parameter
         }
+
+
     }
 }

@@ -115,7 +115,7 @@ class Converter(internal var expensesTable: ExpensesTable, internal var standing
         return accounts
     }
 
-    private fun getBalancesFor(bankAccount: LGABankAccount, lgaBalances: ArrayList<LGABalance>): List<Balance> {
+    private fun getBalancesFor(bankAccount: LGABankAccount, lgaBalances: ArrayList<LGABalance>): MutableList<Balance> {
         val balances = ArrayList<Balance>()
         for (lgaBalance in lgaBalances) {
             if (lgaBalance.bankAccountName == bankAccount.name && lgaBalance.bankName == bankAccount.bank) {
@@ -125,7 +125,7 @@ class Converter(internal var expensesTable: ExpensesTable, internal var standing
         return balances
     }
 
-    private fun ownerToUserList(owner: String): List<User> {
+    private fun ownerToUserList(owner: String): MutableList<User> {
         val result = ArrayList<User>(2)
         when (owner) {
             "Thomas" -> result.add(thomasUser)

@@ -36,7 +36,7 @@ class UserTable(connection: Connection) : Table<User>(connection) {
     }
 
     @Throws(SQLException::class)
-    private fun getPermissions(rs: ResultSet, permissions: String): Map<Component, Permission> {
+    private fun getPermissions(rs: ResultSet, permissions: String): MutableMap<Component, Permission> {
         val buffer = ByteBuffer.wrap(rs.getBytes(permissions))
         return User.bytesToPermissions(buffer)
     }
