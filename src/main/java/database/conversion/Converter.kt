@@ -14,6 +14,7 @@ import database.finance.CategoryTable
 import database.finance.ExpensesTable
 import database.finance.StandingOrderTable
 import org.joda.time.DateTime
+import org.joda.time.LocalDate
 import org.slf4j.LoggerFactory
 import java.sql.Connection
 import java.sql.DriverManager
@@ -66,7 +67,7 @@ class Converter(internal var expensesTable: ExpensesTable, internal var standing
                 lastDate = lga.date
                 // TODO: deleteFrom duplicates(same name, same date, same value
                 // only add if not deleted or deleted and is standing order and add no "ausgleichs"
-                if (!expensesDatabaseItem.isDeleted || !expensesDatabaseItem.item.standingOrder.isBlank() && lga.name != "Ausgleich") {
+                if ((!expensesDatabaseItem.isDeleted || !expensesDatabaseItem.item.standingOrder.isBlank()) && lga.name != "Ausgleich") {
                     expensesTable.add(expensesDatabaseItem)
                 }
                 i++
@@ -119,7 +120,7 @@ class Converter(internal var expensesTable: ExpensesTable, internal var standing
         val balances = ArrayList<Balance>()
         for (lgaBalance in lgaBalances) {
             if (lgaBalance.bankAccountName == bankAccount.name && lgaBalance.bankName == bankAccount.bank) {
-                balances.add(Balance((lgaBalance.balance * 100).toInt(), lgaBalance.date))
+                balances.add(Balance((lgaBalance.balance * 100).toInt(), lgaBalance.date.toLocalDate()))
             }
         }
         return balances
@@ -156,8 +157,8 @@ class Converter(internal var expensesTable: ExpensesTable, internal var standing
         val endDate = lgaStandingOrder.lastDate
         val frequency = lgaToFrequency(lgaStandingOrder.lgaFrequency)
         val frequencyFactor = lgaStandingOrder.number
-        val executedExpenses = mutableMapOf<DateTime, String>() // will be filled while converting lgaExpenses
-        val standingOrder = StandingOrder(name, category, subcategory, costs, costDistribution, firstDate, endDate, frequency, frequencyFactor, executedExpenses)
+        val executedExpenses = mutableMapOf<LocalDate, String>() // will be filled while converting lgaExpenses
+        val standingOrder = StandingOrder(name, category, subcategory, costs, costDistribution, firstDate.toLocalDate(), endDate.toLocalDate(), frequency, frequencyFactor, executedExpenses)
         // random id will be generated in constructor
         return DatabaseItem(standingOrder, insertDate, modifiedDate, deleted, insertId, modifiedId)
     }
@@ -215,6 +216,7 @@ class Converter(internal var expensesTable: ExpensesTable, internal var standing
         return Pair(newcategory, subcategory)
     }
 
+    @Suppress("UNREACHABLE_CODE")
     private fun lgaToFrequency(lgaFrequency: LGAFrequency): Frequency {
         when (lgaFrequency) {
             LGAFrequency.weekly -> return Frequency.Weekly
@@ -245,7 +247,7 @@ class Converter(internal var expensesTable: ExpensesTable, internal var standing
         val standingOrder = ""
 
         // random id will be generated in constructor
-        val expenses = Expenses(name, category, subCategory, costs, costDistribution, date, standingOrder)
+        val expenses = Expenses(name, category, subCategory, costs, costDistribution, date.toLocalDate(), standingOrder)
 
         // if it is a standing order
         if (lgaExpenses.isStandingOrder) {
@@ -262,7 +264,7 @@ class Converter(internal var expensesTable: ExpensesTable, internal var standing
                 // ASSUMPTION: expenses are sorted!
                 // calc id from last expenses
                 expenses.id = calcUuidFrom(standingOrders[0].lastExecutedExpenses ?: standingOrders[0].id)
-                standingOrderTable.addExpensesToStandingOrders(id, expenses.id, lgaExpenses.date)
+                standingOrderTable.addExpensesToStandingOrders(id, expenses.id, lgaExpenses.date.toLocalDate())
             }
         }
 

@@ -1,15 +1,15 @@
 package database.finance
 
 import com.koenig.commonModel.Category
-import com.koenig.commonModel.database.DatabaseTable
+import com.koenig.commonModel.database.DatabaseItemTable
+import database.ItemTable
 import database.NamedParameterStatement
-import database.Table
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.SQLException
 import java.util.*
 
-class CategoryTable(connection: Connection) : Table<Category>(connection) {
+class CategoryTable(connection: Connection) : ItemTable<Category>(connection) {
 
     override val tableName: String
         get() = NAME
@@ -26,8 +26,8 @@ class CategoryTable(connection: Connection) : Table<Category>(connection) {
 
     @Throws(SQLException::class)
     override fun getItem(rs: ResultSet): Category {
-        val main = rs.getString(DatabaseTable.COLUMN_NAME)
-        val subs = DatabaseTable.getStringList(rs.getString(SUBS))
+        val main = rs.getString(DatabaseItemTable.COLUMN_NAME)
+        val subs = DatabaseItemTable.getStringList(rs.getString(SUBS))
         return Category(main, subs)
     }
 
@@ -40,7 +40,7 @@ class CategoryTable(connection: Connection) : Table<Category>(connection) {
     fun addIfNew(category: Category, userId: String) {
         runInLock {
             val dbCategorys = getDatabaseItemsFromName(category.name)
-            if (dbCategorys.size == 0) {
+            if (dbCategorys.isEmpty()) {
                 addFrom(category, userId)
             } else {
                 val dbCategory = dbCategorys[0]

@@ -2,46 +2,50 @@ package database
 
 import com.koenig.commonModel.Family
 import com.koenig.commonModel.database.DatabaseItem
-import com.koenig.commonModel.database.DatabaseTable
+import com.koenig.commonModel.database.DatabaseItemTable
 import com.koenig.commonModel.database.UserService
+import com.koenig.commonModel.toLocalDate
 import com.koenig.communication.messages.FamilyMessage
+import org.joda.time.LocalDate
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.SQLException
 import java.util.*
 
-class FamilyTable(connection: Connection, private val userService: UserService) : Table<Family>(connection) {
+class FamilyTable(connection: Connection, private val userService: UserService) : ItemTable<Family>(connection) {
 
     override val tableName: String
         get() = NAME
 
     override val tableSpecificCreateStatement: String
-        get() = ", $USERS TEXT "
+        get() = ", $USERS TEXT , $START_DATE INT"
 
     override val columnNames: List<String>
-        get() = Arrays.asList(USERS)
+        get() = Arrays.asList(USERS, START_DATE)
 
     @Throws(SQLException::class)
     override fun getItem(rs: ResultSet): Family {
         val usersText = rs.getString(USERS)
         val users = getUsers(userService, usersText)
-        val family = rs.getString(DatabaseTable.COLUMN_NAME)
-        return Family(family, users)
+        val startDate = rs.getLocalDate(START_DATE)
+        val family = rs.getString(DatabaseItemTable.COLUMN_NAME)
+        return Family(family, users, startDate)
     }
 
     @Throws(SQLException::class)
     override fun setItem(ps: NamedParameterStatement, item: Family) {
         setUsers(item.users, ps, USERS)
+        ps.setLocalDate(START_DATE, item.startDate)
     }
 
     @Throws(SQLException::class)
     fun addUserToFamily(family: Family, userId: String) {
         lock.lock()
         try {
-            val selectQuery = "UPDATE " + tableName + " SET " + Table.Companion.getNamedParameter(USERS) + " WHERE " + Table.Companion.getNamedParameter(DatabaseTable.COLUMN_ID)
+            val selectQuery = "UPDATE " + tableName + " SET " + getNamedParameter(USERS) + " WHERE " + getNamedParameter(DatabaseItemTable.COLUMN_ID)
 
             val statement = NamedParameterStatement(connection, selectQuery)
-            statement.setString(DatabaseTable.COLUMN_ID, family.id)
+            statement.setString(DatabaseItemTable.COLUMN_ID, family.id)
             val builder = StringBuilder()
             for (user in family.users) {
                 builder.append(user.id)
@@ -62,17 +66,17 @@ class FamilyTable(connection: Connection, private val userService: UserService) 
         lock.lock()
         try {
             var family: DatabaseItem<Family>? = null
-            val selectQuery = "SELECT * FROM " + tableName + " WHERE " + DatabaseTable.COLUMN_DELETED + " = :" + DatabaseTable.COLUMN_DELETED + " AND " + Table.Companion.getNamedParameter(DatabaseTable.COLUMN_NAME)
+            val selectQuery = "SELECT * FROM " + tableName + " WHERE " + DatabaseItemTable.COLUMN_DELETED + " = :" + DatabaseItemTable.COLUMN_DELETED + " AND " + getNamedParameter(DatabaseItemTable.COLUMN_NAME)
 
             val statement = NamedParameterStatement(connection, selectQuery)
-            statement.setInt(DatabaseTable.COLUMN_DELETED, DatabaseTable.FALSE)
-            statement.setString(DatabaseTable.COLUMN_NAME, familyName)
+            statement.setInt(DatabaseItemTable.COLUMN_DELETED, DatabaseItemTable.FALSE)
+            statement.setString(DatabaseItemTable.COLUMN_NAME, familyName)
             val rs = statement.executeQuery()
             while (rs.next()) {
-                family = resultToItem(rs)
+                family = getDatabaseItem(rs)
             }
 
-            return if (family == null) null else family.item
+            return family?.item
         } finally {
             lock.unlock()
         }
@@ -81,5 +85,10 @@ class FamilyTable(connection: Connection, private val userService: UserService) 
     companion object {
         val NAME = "family_table"
         val USERS = "users"
+        val START_DATE = "start_date"
     }
+}
+
+private fun ResultSet.getLocalDate(key: String): LocalDate {
+    return getInt(key).toLocalDate()
 }

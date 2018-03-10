@@ -60,7 +60,7 @@ public class Server extends SocketChannelTCPServer implements OnReceiveBytesFrom
     public void sendMessage(FamilyMessage message, String toId)
     {
         logger.info("Sending message " + message.getName());
-        message.setFromId(FamilyMessage.ServerId);
+        message.setFromId(FamilyMessage.Companion.getServerId());
         message.setToId(toId);
         sendBytes(message.getBuffer(), findSocketChannel(toId));
     }

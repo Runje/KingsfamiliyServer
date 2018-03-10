@@ -3,14 +3,14 @@ package database
 import com.koenig.commonModel.Component
 import com.koenig.commonModel.Permission
 import com.koenig.commonModel.User
-import com.koenig.commonModel.database.DatabaseTable
+import com.koenig.commonModel.database.DatabaseItemTable
 import java.nio.ByteBuffer
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.SQLException
 import java.util.*
 
-class UserTable(connection: Connection) : Table<User>(connection) {
+class UserTable(connection: Connection) : ItemTable<User>(connection) {
 
     override val tableName: String
         get() = NAME
@@ -27,10 +27,10 @@ class UserTable(connection: Connection) : Table<User>(connection) {
 
     @Throws(SQLException::class)
     override fun getItem(rs: ResultSet): User {
-        val userName = rs.getString(DatabaseTable.COLUMN_NAME)
+        val userName = rs.getString(DatabaseItemTable.COLUMN_NAME)
         val abbreviation = rs.getString(ABBREVIATION)
         val family = rs.getString(FAMILY_NAME)
-        val birthday = Table.Companion.getDateTime(rs, BIRTHDAY)
+        val birthday = getDateTime(rs, BIRTHDAY)
         val permissionMap = getPermissions(rs, PERMISSIONS)
         return User(userName, abbreviation, family, birthday, permissionMap)
     }
@@ -53,10 +53,10 @@ class UserTable(connection: Connection) : Table<User>(connection) {
     fun addFamileToUser(familyName: String, userId: String) {
         lock.lock()
         try {
-            val selectQuery = "UPDATE " + tableName + " SET " + Table.Companion.getNamedParameter(FAMILY_NAME) + " WHERE " + Table.Companion.getNamedParameter(DatabaseTable.COLUMN_ID)
+            val selectQuery = "UPDATE " + tableName + " SET " + getNamedParameter(FAMILY_NAME) + " WHERE " + getNamedParameter(DatabaseItemTable.COLUMN_ID)
 
             val statement = NamedParameterStatement(connection, selectQuery)
-            statement.setString(DatabaseTable.COLUMN_ID, userId)
+            statement.setString(DatabaseItemTable.COLUMN_ID, userId)
             statement.setString(FAMILY_NAME, familyName)
             statement.executeUpdate()
         } finally {

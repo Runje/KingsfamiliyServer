@@ -7,34 +7,33 @@ import com.koenig.commonModel.finance.BankAccount
 import com.koenig.commonModel.finance.Expenses
 import com.koenig.commonModel.finance.StandingOrder
 import database.Database
-import database.Table
+import database.ItemTable
 import database.TransactionID
 import database.conversion.Converter
 import org.joda.time.DateTime
-
 import java.sql.Connection
 import java.sql.SQLException
 
 class FinanceDatabase @Throws(SQLException::class)
 constructor(connection: Connection, userService: UserService) : Database(connection) {
 
-    private val goalTable: GoalTable
-    private val bankAccountTable: BankAccountTable
-    private val transactionTable: FinanceTransactionTable
-    private val expensesTable: ExpensesTable
-    private val standingOrderTable: StandingOrderTable
-    private val categoryTable: CategoryTable
+    val goalTable: GoalTable
+    val bankAccountTable: BankAccountTable
+    val transactionTable: FinanceTransactionTable
+    val expensesTable: ExpensesTable = ExpensesTable(connection)
+    val standingOrderTable: StandingOrderTable
+    val categoryTable: CategoryTable
+    //val assetsCalculator:AssetsCalculator = AssetsCalculator(bankAccountTable, // check if on server the itemsubject add, delete, update are called
 
     val allExpenses: List<Expenses>
         @Throws(SQLException::class)
-        get() = expensesTable.toItemList(expensesTable.getAll())
+        get() = expensesTable.toItemList(expensesTable.all)
 
     val allCategorys: List<Category>
         @Throws(SQLException::class)
-        get() = categoryTable.toItemList(categoryTable.getAll())
+        get() = categoryTable.toItemList(categoryTable.all)
 
     init {
-        expensesTable = ExpensesTable(connection)
         standingOrderTable = StandingOrderTable(connection)
         categoryTable = CategoryTable(connection)
         transactionTable = FinanceTransactionTable(connection)
@@ -108,14 +107,15 @@ constructor(connection: Connection, userService: UserService) : Database(connect
         categoryTable.addFrom(transport, userId)
     }
 
+    @Suppress("UNCHECKED_CAST")
     @Throws(SQLException::class)
-    override fun getItemTable(item: Item): Table<*> {
+    override fun getItemTable(item: Item): ItemTable<Item> {
         return when (ItemType.fromItem(item)) {
-            ItemType.EXPENSES -> expensesTable
-            ItemType.STANDING_ORDER -> standingOrderTable
-            ItemType.CATEGORY -> categoryTable
-            ItemType.BANKACCOUNT -> bankAccountTable
-            ItemType.GOAL -> goalTable
+            ItemType.EXPENSES -> expensesTable as ItemTable<Item>
+            ItemType.STANDING_ORDER -> standingOrderTable as ItemTable<Item>
+            ItemType.CATEGORY -> categoryTable as ItemTable<Item>
+            ItemType.BANKACCOUNT -> bankAccountTable as ItemTable<Item>
+            ItemType.GOAL -> goalTable as ItemTable<Item>
             else -> throw SQLException("Unsupported item")
         }
     }

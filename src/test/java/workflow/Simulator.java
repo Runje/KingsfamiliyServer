@@ -72,7 +72,7 @@ public class Simulator extends SocketChannelTCPClient implements OnConnectionCha
 
     public void sendFamilyMessage(FamilyMessage msg) {
         msg.setFromId(fromId);
-        msg.setToId(FamilyMessage.ServerId);
+        msg.setToId(FamilyMessage.Companion.getServerId());
         super.sendMessage(msg);
     }
 

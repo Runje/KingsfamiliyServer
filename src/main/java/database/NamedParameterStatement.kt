@@ -1,7 +1,10 @@
 package database
 
 
+import com.koenig.commonModel.toInt
 import org.joda.time.DateTime
+import org.joda.time.LocalDate
+import org.joda.time.YearMonth
 import java.sql.*
 
 class NamedParameterStatement
@@ -327,7 +330,14 @@ constructor(connection: Connection, query: String) {
         setInt(name, value.toInt())
     }
 
+    fun setLocalDate(key: String, startDate: LocalDate) {
+        setInt(key, startDate.toInt())
+    }
+
+    fun setYearMonth(key: String, yearMonth: YearMonth) {
+        setInt(key, yearMonth.toInt())
+    }
+
 
 }
 
-fun Boolean.toInt(): Int = if (this) 1 else 0

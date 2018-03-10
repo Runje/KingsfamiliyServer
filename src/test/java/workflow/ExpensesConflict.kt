@@ -9,7 +9,6 @@ import com.koenig.communication.messages.UpdatesMessage
 import com.koenig.communication.messages.finance.FinanceTextMessages
 import database.DatabaseHelper
 import org.joda.time.DateTime
-import org.joda.time.Duration
 import org.junit.Assert
 import org.junit.Test
 
@@ -22,7 +21,7 @@ class ExpensesConflict : WorkflowBase() {
         assertLastExpensesUpdates(0, simulatorThomas)
 
         simulatorThomas.clearMessages()
-        addExpenses(ItemsCreater.expensesFrom(lastSyncDate.minus(Duration.millis(1)), DatabaseHelper.milena), simulatorMilena)
+        addExpenses(ItemsCreater.expensesFrom(lastSyncDate.toLocalDate(), DatabaseHelper.milena), simulatorMilena)
         askForExpensesUpdatesSince(simulatorThomas, lastSyncDate)
         assertLastExpensesUpdates(1, simulatorThomas)
     }

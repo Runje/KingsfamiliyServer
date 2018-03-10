@@ -1,17 +1,17 @@
 package database.finance
 
-import com.koenig.commonModel.database.DatabaseTable
+import com.koenig.commonModel.database.DatabaseItemTable
 import com.koenig.commonModel.database.UserService
 import com.koenig.commonModel.finance.Balance
 import com.koenig.commonModel.finance.BankAccount
+import database.ItemTable
 import database.NamedParameterStatement
-import database.Table
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.SQLException
 import java.util.*
 
-class BankAccountTable(connection: Connection, private val userService: UserService) : Table<BankAccount>(connection) {
+class BankAccountTable(connection: Connection, private val userService: UserService) : ItemTable<BankAccount>(connection) {
 
     override val tableName: String
         get() = NAME
@@ -32,7 +32,7 @@ class BankAccountTable(connection: Connection, private val userService: UserServ
 
     @Throws(SQLException::class)
     override fun getItem(rs: ResultSet): BankAccount {
-        val name = rs.getString(DatabaseTable.COLUMN_NAME)
+        val name = rs.getString(DatabaseItemTable.COLUMN_NAME)
         val bank = rs.getString(BANK)
         val balances = Balance.getBalances(rs.getBytes(BALANCES))
         val owners = getUsers(userService, rs.getString(OWNERS))

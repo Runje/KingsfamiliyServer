@@ -2,14 +2,14 @@ package database.finance
 
 import com.koenig.commonModel.Byteable
 import com.koenig.commonModel.Goal
-import com.koenig.commonModel.database.DatabaseTable
+import com.koenig.commonModel.database.DatabaseItemTable
+import database.ItemTable
 import database.NamedParameterStatement
-import database.Table
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.SQLException
 
-class GoalTable(connection: Connection) : Table<Goal>(connection) {
+class GoalTable(connection: Connection) : ItemTable<Goal>(connection) {
     override val tableName: String
         get() = NAME
     override val columnNames: MutableList<String>
@@ -21,7 +21,7 @@ class GoalTable(connection: Connection) : Table<Goal>(connection) {
 
     @Throws(SQLException::class)
     override fun getItem(rs: ResultSet): Goal {
-        val name = rs.getString(DatabaseTable.COLUMN_NAME)
+        val name = rs.getString(DatabaseItemTable.COLUMN_NAME)
         val goals = Byteable.bytesToGoals(rs.getBytes(COLUMN_GOALS))
         val userId = rs.getString(COLUMN_USER_ID)
         return Goal(name, goals, userId)

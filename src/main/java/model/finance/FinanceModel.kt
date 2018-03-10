@@ -1,21 +1,31 @@
-package model
+package model.finance
 
 import com.koenig.commonModel.ItemType
 import com.koenig.commonModel.Operation
 import com.koenig.commonModel.Operator
 import com.koenig.commonModel.database.UserService
+import com.koenig.commonModel.finance.features.StandingOrderExecutor
 import com.koenig.communication.messages.*
 import com.koenig.communication.messages.finance.FinanceTextMessages
 import communication.Server
+import database.ExpensesDbRepository
+import database.StandingOrderDbRepository
 import database.finance.FinanceDatabase
+import io.reactivex.Observable
+import io.reactivex.schedulers.Schedulers
+import model.ConnectionService
 import org.joda.time.DateTime
 import org.joda.time.Duration
+import org.joda.time.LocalDate
+import org.joda.time.LocalTime
 import org.slf4j.LoggerFactory
 import java.sql.SQLException
+import java.util.concurrent.TimeUnit
 
 
 class FinanceModel(private val server: Server, private val connectionService: ConnectionService, private val userService: UserService) {
     private var conversionStarted: Boolean = false
+    private val lastExecution = LocalDate(0)
 
     init {
         val thomasId = "c572d4e7-da4b-41d8-9c1f-7e9a97657155"
@@ -30,6 +40,39 @@ class FinanceModel(private val server: Server, private val connectionService: Co
             val milena = connectionService.getUser(milenaId)
             database.convert(milena, thomas)
         }
+
+        scheduleRepatingTasks()
+    }
+
+    private fun scheduleRepatingTasks() {
+        Observable.interval(0, 1, TimeUnit.HOURS).subscribeOn(Schedulers.computation()).subscribe {
+            // execute every day at around 2 o'clock for every finance database!!!
+            if (lastExecution.isBefore(LocalDate()) && LocalTime().hourOfDay >= 2) {
+                logger.info("Executing daily tasks...")
+
+                connectionService.allConnections.forEach {
+                    val db = FinanceDatabase(it, userService)
+                    // standing orders
+                    val expensesTable = ExpensesDbRepository(db.expensesTable)
+                    val standingOrderExecutor = StandingOrderExecutor(StandingOrderDbRepository(db.standingOrderTable), expensesTable)
+                    logger.info("Executing standing orders...")
+                    standingOrderExecutor.executeForAll()
+                    if (standingOrderExecutor.consistencyCheck()) {
+                        logger.info("Consistency check passed")
+                    } else {
+                        // TODO: what?
+                        logger.error("Consistency check failed for $db")
+                    }
+
+                    // compensations
+                    logger.info("Calculating compensations...")
+                    // TODO: statistiken auf dem server auch ausrechnen
+                    //AssetsCalculator(d.months(1), db.bankAccountTable, assetsCalculatorService)
+                    //CompensationCalculator(expensesTable, )
+                }
+
+            }
+        }
     }
 
     private val logger = LoggerFactory.getLogger(javaClass.simpleName)
@@ -37,7 +80,7 @@ class FinanceModel(private val server: Server, private val connectionService: Co
     fun onReceiveMessage(message: FamilyMessage) {
         val userId = message.fromId
         when (message.name) {
-            TextMessage.NAME -> processCommands((message as TextMessage).text, message.getFromId())
+            TextMessage.NAME -> processCommands((message as TextMessage).text, message.fromId)
 
             AUDMessage.NAME -> {
                 val audMessage = message as AUDMessage
@@ -157,3 +200,4 @@ class FinanceModel(private val server: Server, private val connectionService: Co
 
 
 }
+

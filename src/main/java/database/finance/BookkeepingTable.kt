@@ -1,17 +1,17 @@
 package database.finance
 
-import com.koenig.commonModel.database.DatabaseTable
+import com.koenig.commonModel.database.DatabaseItemTable
 import com.koenig.commonModel.finance.BookkeepingEntry
 import com.koenig.commonModel.finance.CostDistribution
+import database.ItemTable
 import database.NamedParameterStatement
-import database.Table
 import java.nio.ByteBuffer
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.SQLException
 import java.util.*
 
-abstract class BookkeepingTable<T : BookkeepingEntry>(connection: Connection) : Table<T>(connection) {
+abstract class BookkeepingTable<T : BookkeepingEntry>(connection: Connection) : ItemTable<T>(connection) {
 
 
     override val tableSpecificCreateStatement: String
@@ -39,7 +39,7 @@ abstract class BookkeepingTable<T : BookkeepingEntry>(connection: Connection) : 
 
     @Throws(SQLException::class)
     override fun getItem(rs: ResultSet): T {
-        val name = rs.getString(DatabaseTable.COLUMN_NAME)
+        val name = rs.getString(DatabaseItemTable.COLUMN_NAME)
         val category = rs.getString(CATEGORY)
         val subcategory = rs.getString(SUBCATEGORY)
         val costs = rs.getInt(COSTS)

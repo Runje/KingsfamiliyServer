@@ -20,7 +20,7 @@ public class UserDatabase extends Database {
     }
 
     @Override
-    protected Table getItemTable(Item item) throws SQLException {
+    protected ItemTable getItemTable(Item item) throws SQLException {
         switch (ItemType.Companion.fromItem(item)) {
             case FAMILY:
                 return familyTable;
@@ -32,10 +32,10 @@ public class UserDatabase extends Database {
     }
 
     public void start() throws SQLException {
-        userTable = new UserTable(connection);
-        familyTable = new FamilyTable(connection, getUserService());
-        tables.add(userTable);
-        tables.add(familyTable);
+        userTable = new UserTable(getConnection());
+        familyTable = new FamilyTable(getConnection(), getUserService());
+        getTables().add(userTable);
+        getTables().add(familyTable);
         createAllTables();
 
         // TEST CODE
@@ -47,8 +47,8 @@ public class UserDatabase extends Database {
     }
 
     public void stop() throws SQLException {
-        if (connection != null)
-            connection.close();
+        if (getConnection() != null)
+            getConnection().close();
     }
 
     public void addUser(User user, String id) throws SQLException {
@@ -60,7 +60,7 @@ public class UserDatabase extends Database {
         userTable.add(databaseItem);
     }
 
-    public List<User> getAllUser() throws SQLException {
+    public List<User> getAllUser() {
         return userTable.toItemList(userTable.getAll());
     }
 
@@ -69,7 +69,7 @@ public class UserDatabase extends Database {
         familyTable.add(databaseItem);
     }
 
-    public List<Family> getAllFamilys() throws SQLException {
+    public List<Family> getAllFamilys() {
         return familyTable.toItemList(familyTable.getAll());
     }
 
