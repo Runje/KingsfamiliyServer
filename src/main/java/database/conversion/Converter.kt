@@ -10,7 +10,7 @@ import com.koenig.commonModel.finance.features.StandingOrderExecutor
 import database.ExpensesDbRepository
 import database.StandingOrderDbRepository
 import database.finance.BankAccountTable
-import database.finance.CategoryTable
+import database.finance.CategoryJavaTable
 import database.finance.ExpensesTable
 import database.finance.StandingOrderTable
 import org.joda.time.DateTime
@@ -21,7 +21,7 @@ import java.sql.DriverManager
 import java.sql.SQLException
 import java.util.*
 
-class Converter(internal var expensesTable: ExpensesTable, internal var standingOrderTable: StandingOrderTable, private val categoryTable: CategoryTable, private val bankAccountTable: BankAccountTable, internal var milenaUser: User, internal var thomasUser: User) {
+class Converter(internal var expensesTable: ExpensesTable, internal var standingOrderTable: StandingOrderTable, private val categoryTable: CategoryJavaTable, private val bankAccountTable: BankAccountTable, internal var milenaUser: User, internal var thomasUser: User) {
     protected var logger = LoggerFactory.getLogger(javaClass.simpleName)
 
     @Throws(SQLException::class)

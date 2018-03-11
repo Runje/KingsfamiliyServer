@@ -2,29 +2,36 @@ package database.finance
 
 import com.koenig.commonModel.*
 import com.koenig.commonModel.database.DatabaseItem
-import com.koenig.commonModel.database.UserService
 import com.koenig.commonModel.finance.BankAccount
 import com.koenig.commonModel.finance.Expenses
 import com.koenig.commonModel.finance.StandingOrder
+import com.koenig.commonModel.finance.statistics.AssetsCalculator
+import com.koenig.commonModel.finance.statistics.CategoryCalculator
+import database.BankAccountDbRepository
 import database.Database
 import database.ItemTable
 import database.TransactionID
 import database.conversion.Converter
+import io.reactivex.Observable
 import org.joda.time.DateTime
+import org.joda.time.YearMonth
 import java.sql.Connection
 import java.sql.SQLException
 
+/**
+ * Finance Database for one family
+ */
 class FinanceDatabase @Throws(SQLException::class)
-constructor(connection: Connection, userService: UserService) : Database(connection) {
+constructor(connection: Connection, userService: (String) -> User?, val family: Family) : Database(connection) {
 
     val goalTable: GoalTable
-    val bankAccountTable: BankAccountTable
+    val bankAccountTable: BankAccountTable = BankAccountTable(connection, userService)
     val transactionTable: FinanceTransactionTable
     val expensesTable: ExpensesTable = ExpensesTable(connection)
     val standingOrderTable: StandingOrderTable
-    val categoryTable: CategoryTable
-    //val assetsCalculator:AssetsCalculator = AssetsCalculator(bankAccountTable, // check if on server the itemsubject add, delete, update are called
-
+    val categoryTable: CategoryJavaTable
+    val assetsCalculator = AssetsCalculator(bankAccountTable, Observable.just(family.startMonth), Observable.just(YearMonth()), AssetsJavaRepository(connection, BankAccountDbRepository(bankAccountTable)))
+    val categoryCalculator = CategoryCalculator(expensesTable, CategoryJavaRepository(connection), Observable.just(YearMonth()))
     val allExpenses: List<Expenses>
         @Throws(SQLException::class)
         get() = expensesTable.toItemList(expensesTable.all)
@@ -35,9 +42,8 @@ constructor(connection: Connection, userService: UserService) : Database(connect
 
     init {
         standingOrderTable = StandingOrderTable(connection)
-        categoryTable = CategoryTable(connection)
+        categoryTable = CategoryJavaTable(connection)
         transactionTable = FinanceTransactionTable(connection)
-        bankAccountTable = BankAccountTable(connection, userService)
         goalTable = GoalTable(connection)
         tables.add(expensesTable)
         tables.add(standingOrderTable)

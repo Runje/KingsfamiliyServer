@@ -1,10 +1,11 @@
 package model.finance
 
-import com.koenig.commonModel.ItemType
-import com.koenig.commonModel.Operation
-import com.koenig.commonModel.Operator
-import com.koenig.commonModel.database.UserService
+import com.koenig.FamilyConstants
+import com.koenig.commonModel.*
+import com.koenig.commonModel.Repository.FamilyRepository
+import com.koenig.commonModel.finance.FinanceConfig
 import com.koenig.commonModel.finance.features.StandingOrderExecutor
+import com.koenig.commonModel.finance.statistics.CompensationCalculator
 import com.koenig.communication.messages.*
 import com.koenig.communication.messages.finance.FinanceTextMessages
 import communication.Server
@@ -23,7 +24,7 @@ import java.sql.SQLException
 import java.util.concurrent.TimeUnit
 
 
-class FinanceModel(private val server: Server, private val connectionService: ConnectionService, private val userService: UserService) {
+class FinanceModel(private val server: Server, private val connectionService: ConnectionService, private val userService: (String) -> User?, private val familyRepository: FamilyRepository) {
     private var conversionStarted: Boolean = false
     private val lastExecution = LocalDate(0)
 
@@ -38,7 +39,7 @@ class FinanceModel(private val server: Server, private val connectionService: Co
             val thomas = connectionService.getUser(thomasId)
             val milenaId = "c6540de0-46bb-42cd-939b-ce52677fa19d"
             val milena = connectionService.getUser(milenaId)
-            database.convert(milena, thomas)
+            database.convert(milena!!, thomas!!)
         }
 
         scheduleRepatingTasks()
@@ -50,8 +51,10 @@ class FinanceModel(private val server: Server, private val connectionService: Co
             if (lastExecution.isBefore(LocalDate()) && LocalTime().hourOfDay >= 2) {
                 logger.info("Executing daily tasks...")
 
-                connectionService.allConnections.forEach {
-                    val db = FinanceDatabase(it, userService)
+                familyRepository.allFamilies.forEach { family ->
+
+                    val connection = connectionService.getConnectionFromFamilyId(family.id)
+                    val db = FinanceDatabase(connection, userService, family)
                     // standing orders
                     val expensesTable = ExpensesDbRepository(db.expensesTable)
                     val standingOrderExecutor = StandingOrderExecutor(StandingOrderDbRepository(db.standingOrderTable), expensesTable)
@@ -60,19 +63,24 @@ class FinanceModel(private val server: Server, private val connectionService: Co
                     if (standingOrderExecutor.consistencyCheck()) {
                         logger.info("Consistency check passed")
                     } else {
-                        // TODO: what?
+                        // TODO: what failed?
                         logger.error("Consistency check failed for $db")
                     }
 
                     // compensations
                     logger.info("Calculating compensations...")
-                    // TODO: statistiken auf dem server auch ausrechnen
-                    //AssetsCalculator(d.months(1), db.bankAccountTable, assetsCalculatorService)
-                    //CompensationCalculator(expensesTable, )
+
+                    val config = getConfigFromFamily(family)
+                    val calculator = CompensationCalculator(expensesTable, db.categoryCalculator.deltaStatisticsForAll, db.assetsCalculator.deltaAssetsForAll, config)
+                    calculator.calcCompensations()
                 }
 
             }
         }
+    }
+
+    private fun getConfigFromFamily(family: Family): FinanceConfig {
+        return FinanceServerConfig(family, FamilyConstants.OVERALL_STRING, FamilyConstants.FUTURE_STRING, FamilyConstants.COMPENSATION_NAME, FamilyConstants.COMPENSATION_CATEGORY)
     }
 
     private val logger = LoggerFactory.getLogger(javaClass.simpleName)
@@ -192,7 +200,8 @@ class FinanceModel(private val server: Server, private val connectionService: Co
     @Throws(SQLException::class)
     private fun getFinanceDatabaseFromUser(userId: String): FinanceDatabase {
         val connection = connectionService.getConnectionFromUser(userId)
-        val database = FinanceDatabase(connection, userService)
+        val database = FinanceDatabase(connection, userService, connectionService.getFamilyFromUserId(userId)
+                ?: throw SQLException("Family not found"))
 
 
         return database

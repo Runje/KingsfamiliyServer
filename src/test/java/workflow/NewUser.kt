@@ -30,7 +30,7 @@ class NewUser {
     private val simulator = Simulator(test_id)
     private val milena = User("Milena", king, DateTime(1987, 8, 10, 0, 0))
     private val simulatorUser = User(simulator.id, "Simulator", king, DateTime(1987, 8, 10, 0, 0))
-    private val kings = Family("König", Arrays.asList(milena), FamilyConstants.BEGIN_LOCAL_DATE)
+    private val kings = Family("König", Arrays.asList(milena), FamilyConstants.BEGIN_YEAR_MONTH)
 
     @Before
     @Throws(SQLException::class, InterruptedException::class)

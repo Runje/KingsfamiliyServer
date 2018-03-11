@@ -1,33 +1,36 @@
 package database
 
 import com.koenig.commonModel.Family
+import com.koenig.commonModel.Repository.FamilyRepository
+import com.koenig.commonModel.User
 import com.koenig.commonModel.database.DatabaseItem
 import com.koenig.commonModel.database.DatabaseItemTable
-import com.koenig.commonModel.database.UserService
 import com.koenig.commonModel.toLocalDate
+import com.koenig.commonModel.toYearMonth
 import com.koenig.communication.messages.FamilyMessage
 import org.joda.time.LocalDate
+import org.joda.time.YearMonth
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.SQLException
 import java.util.*
 
-class FamilyTable(connection: Connection, private val userService: UserService) : ItemTable<Family>(connection) {
+class FamilyTable(connection: Connection, private val userService: (String) -> User?) : ItemTable<Family>(connection) {
 
     override val tableName: String
         get() = NAME
 
     override val tableSpecificCreateStatement: String
-        get() = ", $USERS TEXT , $START_DATE INT"
+        get() = ", $USERS TEXT , $START_MONTH INT"
 
     override val columnNames: List<String>
-        get() = Arrays.asList(USERS, START_DATE)
+        get() = Arrays.asList(USERS, START_MONTH)
 
     @Throws(SQLException::class)
     override fun getItem(rs: ResultSet): Family {
         val usersText = rs.getString(USERS)
         val users = getUsers(userService, usersText)
-        val startDate = rs.getLocalDate(START_DATE)
+        val startDate = rs.getYearMonth(START_MONTH)
         val family = rs.getString(DatabaseItemTable.COLUMN_NAME)
         return Family(family, users, startDate)
     }
@@ -35,7 +38,7 @@ class FamilyTable(connection: Connection, private val userService: UserService) 
     @Throws(SQLException::class)
     override fun setItem(ps: NamedParameterStatement, item: Family) {
         setUsers(item.users, ps, USERS)
-        ps.setLocalDate(START_DATE, item.startDate)
+        ps.setYearMonth(START_MONTH, item.startMonth)
     }
 
     @Throws(SQLException::class)
@@ -85,10 +88,20 @@ class FamilyTable(connection: Connection, private val userService: UserService) 
     companion object {
         val NAME = "family_table"
         val USERS = "users"
-        val START_DATE = "start_date"
+        val START_MONTH = "start_month"
     }
 }
 
-private fun ResultSet.getLocalDate(key: String): LocalDate {
+fun ResultSet.getYearMonth(key: String): YearMonth {
+    return getInt(key).toYearMonth()
+}
+
+fun ResultSet.getLocalDate(key: String): LocalDate {
     return getInt(key).toLocalDate()
+}
+
+class FamilyDbRepository(val table: FamilyTable) : FamilyRepository {
+    override val allFamilies: List<Family>
+        get() = table.allItems
+
 }

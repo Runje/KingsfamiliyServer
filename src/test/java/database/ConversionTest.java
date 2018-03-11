@@ -6,7 +6,7 @@ import database.conversion.Converter;
 import database.conversion.LGAExpenses;
 import database.conversion.LGAExpensesTable;
 import database.finance.BankAccountTable;
-import database.finance.CategoryTable;
+import database.finance.CategoryJavaTable;
 import database.finance.ExpensesTable;
 import database.finance.StandingOrderTable;
 import org.junit.After;
@@ -54,7 +54,7 @@ public class ConversionTest {
     public void convert() throws SQLException {
         ExpensesTable expensesTable = new ExpensesTable(connection);
         StandingOrderTable standingOrderTable = new StandingOrderTable(connection);
-        CategoryTable categoryTable = new CategoryTable(connection);
+        CategoryJavaTable categoryTable = new CategoryJavaTable(connection);
         BankAccountTable bankAccountTable = new BankAccountTable(connection, userDatabase.getUserService());
         if (!expensesTable.isExisting()) {
             expensesTable.create();

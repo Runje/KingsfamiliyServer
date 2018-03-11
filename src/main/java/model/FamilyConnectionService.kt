@@ -1,5 +1,6 @@
 package model
 
+import com.koenig.commonModel.Family
 import com.koenig.commonModel.User
 import database.UserDatabase
 import java.sql.Connection
@@ -11,7 +12,7 @@ class FamilyConnectionService(private val database: UserDatabase) : ConnectionSe
         get() {
             database.allFamilys.forEach {
                 // must be called to make sure it is in the map
-                getConnectionFromFamily(it.id)
+                getConnectionFromFamilyId(it.id)
             }
 
             return connections.values
@@ -26,11 +27,11 @@ class FamilyConnectionService(private val database: UserDatabase) : ConnectionSe
     @Throws(SQLException::class)
     override fun getConnectionFromUser(userId: String): Connection {
         val familyId = database.getFamilyIdFromUser(userId)
-        return getConnectionFromFamily(familyId)
+        return getConnectionFromFamilyId(familyId)
 
     }
 
-    private fun getConnectionFromFamily(familyId: String): Connection {
+    override fun getConnectionFromFamilyId(familyId: String): Connection {
         if (connections[familyId] == null) {
             connections[familyId] = DriverManager.getConnection("jdbc:sqlite:" + familyIdToDatabaseName(familyId))
         }
@@ -38,8 +39,12 @@ class FamilyConnectionService(private val database: UserDatabase) : ConnectionSe
         return connections[familyId]!!
     }
 
+    override fun getFamilyFromUserId(userId: String): Family? {
+        return database.getFamilyFromUser(userId)
+    }
+
     @Throws(SQLException::class)
-    override fun getUser(userId: String): User {
+    override fun getUser(userId: String): User? {
         return database.getUserById(userId)
     }
 }

@@ -1,7 +1,7 @@
 package database.finance
 
+import com.koenig.commonModel.User
 import com.koenig.commonModel.database.DatabaseItemTable
-import com.koenig.commonModel.database.UserService
 import com.koenig.commonModel.finance.Balance
 import com.koenig.commonModel.finance.BankAccount
 import database.ItemTable
@@ -11,7 +11,7 @@ import java.sql.ResultSet
 import java.sql.SQLException
 import java.util.*
 
-class BankAccountTable(connection: Connection, private val userService: UserService) : ItemTable<BankAccount>(connection) {
+class BankAccountTable(connection: Connection, private val userService: (String) -> User?) : ItemTable<BankAccount>(connection) {
 
     override val tableName: String
         get() = NAME

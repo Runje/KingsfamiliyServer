@@ -13,10 +13,11 @@ import com.koenig.communication.messages.family.FamilyTextMessages
 import com.koenig.communication.messages.family.UserMessage
 import communication.OnReceiveMessageListener
 import communication.Server
+import database.FamilyDbRepository
 import database.UserDatabase
 import model.finance.FinanceModel
 import org.joda.time.DateTime
-import org.joda.time.LocalDate
+import org.joda.time.YearMonth
 import org.slf4j.LoggerFactory
 import java.sql.SQLException
 import java.util.*
@@ -24,41 +25,38 @@ import java.util.*
 class FamilyModel : OnReceiveMessageListener {
 
     private val logger = LoggerFactory.getLogger(javaClass.simpleName)
-    private var server: Server? = null
-    private var database: UserDatabase? = null
-    private var financeModel: FinanceModel? = null
-    var familyConnectionService: FamilyConnectionService? = null
-        private set
+    private var server: Server = Server(ConnectUtils.PORT, this)
+    private lateinit var userDatabase: UserDatabase
+    lateinit var familyConnectionService: FamilyConnectionService
+    private lateinit var financeModel: FinanceModel
 
     @Throws(SQLException::class)
     fun start(userDatabase: UserDatabase) {
         logger.info("Start")
-        database = userDatabase
-
-        database!!.start()
-        server = Server(ConnectUtils.PORT, this)
-        familyConnectionService = FamilyConnectionService(database!!)
-        financeModel = FinanceModel(server!!, familyConnectionService!!, userDatabase.userService)
-        server!!.start()
+        this.userDatabase = userDatabase
+        familyConnectionService = FamilyConnectionService(this.userDatabase)
+        financeModel = FinanceModel(server, familyConnectionService, userDatabase.userService, FamilyDbRepository(this.userDatabase.familyTable))
+        userDatabase.start()
+        server.start()
         val thomasId = "c572d4e7-da4b-41d8-9c1f-7e9a97657155"
-        val thomas = database!!.getUserById(thomasId)
+        val thomas = this.userDatabase.getUserById(thomasId)
         val userthomas = User(thomasId, "Thomas", "König", DateTime(1987, 6, 14, 12, 0))
         if (thomas == null) {
-            database!!.addUser(userthomas, thomasId)
+            this.userDatabase.addUser(userthomas, thomasId)
         }
         val milenaId = "c6540de0-46bb-42cd-939b-ce52677fa19d"
-        val milena = database!!.getUserById(milenaId)
+        val milena = this.userDatabase.getUserById(milenaId)
         val userMilena = User(milenaId, "Milena", "König", DateTime(1987, 8, 10, 12, 0))
         if (milena == null) {
-            database!!.addUser(userMilena, milenaId)
+            this.userDatabase.addUser(userMilena, milenaId)
         }
 
-        val family = database!!.getFamilyByName("König")
+        val family = this.userDatabase.getFamilyByName("König")
         if (family == null) {
             val users = ArrayList<User>(2)
             users.add(userMilena)
             users.add(userthomas)
-            database!!.addFamily(Family("König", users, LocalDate(2015, 1, 1)), thomasId)
+            this.userDatabase.addFamily(Family("König", users, YearMonth(2015, 1)), thomasId)
         }
 
     }
@@ -70,7 +68,7 @@ class FamilyModel : OnReceiveMessageListener {
             logger.info("Received message: " + message.name)
             when (message.component) {
 
-                Component.FINANCE -> financeModel!!.onReceiveMessage(message)
+                Component.FINANCE -> financeModel.onReceiveMessage(message)
                 Component.CONTRACTS -> {
                 }
                 Component.OWNINGS -> {
@@ -130,8 +128,8 @@ class FamilyModel : OnReceiveMessageListener {
 
     private fun sendFamilyMembers(userId: String) {
         try {
-            val users = database!!.getFamilyMemberFrom(userId)
-            server!!.sendMessage(FamilyMemberMessage(users), userId)
+            val users = userDatabase.getFamilyMemberFrom(userId)
+            server.sendMessage(FamilyMemberMessage(users), userId)
         } catch (e: SQLException) {
             logger.error(e.message)
             sendFamilyCommand(FamilyTextMessages.GET_FAMILY_MEMBER_FAIL, userId)
@@ -141,9 +139,9 @@ class FamilyModel : OnReceiveMessageListener {
 
     private fun login(userId: String) {
         try {
-            val user = database!!.getUserById(userId) ?: throw SQLException("User does not exist with id: $userId")
+            val user = userDatabase.getUserById(userId) ?: throw SQLException("User does not exist with id: $userId")
 
-            server!!.sendMessage(UserMessage(user), userId)
+            server.sendMessage(UserMessage(user), userId)
             logger.info(user.name + " logged in(Family: " + user.family + ")")
         } catch (e: SQLException) {
             logger.error("Couldn't find user: " + e.message)
@@ -155,38 +153,38 @@ class FamilyModel : OnReceiveMessageListener {
     private fun createNewFamily(familyName: String, userId: String): Boolean {
         try {
             // check if family already exists, name must be unique
-            val family = database!!.getFamilyByName(familyName)
+            val family = userDatabase.getFamilyByName(familyName)
             if (family != null) {
                 throw SQLException("Family exists already")
             }
 
-            database!!.addFamily(Family(familyName), userId)
-            // TODO: create file database for each new family
+            userDatabase.addFamily(Family(familyName), userId)
+            // TODO: create file userDatabase for each new family
 
             sendFamilyCommand(FamilyTextMessages.CREATE_FAMILY_SUCCESS, userId)
             return true
 
         } catch (e: SQLException) {
             logger.error("Couldn't add family" + e.message)
-            server!!.sendMessage(TextMessage(Component.FAMILY, FamilyTextMessages.CREATE_FAMILY_FAIL), userId)
+            server.sendMessage(TextMessage(Component.FAMILY, FamilyTextMessages.CREATE_FAMILY_FAIL), userId)
             return false
         }
 
     }
 
     private fun sendFamilyCommand(command: String, userId: String) {
-        server!!.sendMessage(TextMessage(Component.FAMILY, command), userId)
+        server.sendMessage(TextMessage(Component.FAMILY, command), userId)
     }
 
     private fun joinFamily(familyName: String, userId: String) {
         // TODO: if first then its the admin
         try {
-            database!!.addUserToFamily(familyName, userId)
+            userDatabase.addUserToFamily(familyName, userId)
             sendFamilyCommand(FamilyTextMessages.JOIN_FAMILY_SUCCESS, userId)
             logger.info("Famile $familyName beigetreten")
         } catch (e: SQLException) {
             logger.error("Couldn't join user to family: " + e.message)
-            server!!.sendMessage(TextMessage(Component.FAMILY, FamilyTextMessages.JOIN_FAMILY_FAIL), userId)
+            server.sendMessage(TextMessage(Component.FAMILY, FamilyTextMessages.JOIN_FAMILY_FAIL), userId)
         }
 
     }
@@ -195,21 +193,21 @@ class FamilyModel : OnReceiveMessageListener {
         try {
             if (userName.trim { it <= ' ' }.isEmpty()) throw SQLException("Empty name not allowed")
             val user = User(userId, userName.trim { it <= ' ' }, "", birthday)
-            database!!.addUser(user, userId)
+            userDatabase.addUser(user, userId)
             logger.info("Adding user $userName, Birthday: $birthday")
-            server!!.sendMessage(TextMessage(Component.FAMILY, FamilyTextMessages.CREATE_USER_SUCCESS), userId)
+            server.sendMessage(TextMessage(Component.FAMILY, FamilyTextMessages.CREATE_USER_SUCCESS), userId)
         } catch (e: SQLException) {
-            logger.error("Couldn't add user to database: " + e.message)
-            server!!.sendMessage(TextMessage(Component.FAMILY, FamilyTextMessages.CREATE_USER_FAIL), userId)
+            logger.error("Couldn't add user to userDatabase: " + e.message)
+            server.sendMessage(TextMessage(Component.FAMILY, FamilyTextMessages.CREATE_USER_FAIL), userId)
         }
 
     }
 
 
     fun stop() {
-        server!!.stop()
+        server.stop()
         try {
-            database!!.stop()
+            userDatabase.stop()
         } catch (e: SQLException) {
             e.printStackTrace()
         }

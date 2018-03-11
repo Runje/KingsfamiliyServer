@@ -55,11 +55,11 @@ abstract class Database(protected var connection: Connection) {
      * @throws SQLException
      */
     @Throws(SQLException::class)
-    fun startTransaction(runnable: Transaction, table: ItemTable<*>) {
+    fun startTransaction(runnable: () -> Unit, table: ItemTable<*>) {
         table.lock.lock()
         try {
             connection.autoCommit = false
-            runnable.run()
+            runnable.invoke()
             connection.commit()
         } catch (e: Exception) {
             logger.error("Error on transaction: " + e.message)
@@ -79,13 +79,13 @@ abstract class Database(protected var connection: Connection) {
      * @throws SQLException
      */
     @Throws(SQLException::class)
-    protected fun startTransaction(runnable: Transaction) {
+    protected fun startTransaction(runnable: () -> Unit) {
         for (table in tables) {
             table.lock.lock()
         }
         try {
             connection.autoCommit = false
-            runnable.run()
+            runnable.invoke()
             connection.commit()
         } catch (e: Exception) {
             logger.error("Error on transaction: " + e.message)
@@ -107,15 +107,7 @@ abstract class Database(protected var connection: Connection) {
     }
 
 
-    interface Transaction {
-        @Throws(SQLException::class)
-        fun run()
-    }
 
-    interface ResultTransaction<X> {
-        @Throws(SQLException::class)
-        fun run(): X
-    }
 
 
 }

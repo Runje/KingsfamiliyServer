@@ -1,28 +1,20 @@
 package database.finance
 
 import com.koenig.commonModel.Category
+import com.koenig.commonModel.Repository.CategoryDbRepository
+import com.koenig.commonModel.database.CategoryTable
+import com.koenig.commonModel.database.CategoryTable.Companion.SUBS
 import com.koenig.commonModel.database.DatabaseItemTable
+import com.koenig.commonModel.database.MonthStatisticTable
 import database.ItemTable
 import database.NamedParameterStatement
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.SQLException
-import java.util.*
 
-class CategoryTable(connection: Connection) : ItemTable<Category>(connection) {
+class CategoryJavaTable(connection: Connection) : ItemTable<Category>(connection), CategoryTable {
 
-    override val tableName: String
-        get() = NAME
 
-    override val tableSpecificCreateStatement: String
-        get() = ", $SUBS TEXT"
-
-    override val columnNames: List<String>
-        get() {
-            val columnNames = ArrayList<String>()
-            columnNames.add(SUBS)
-            return columnNames
-        }
 
     @Throws(SQLException::class)
     override fun getItem(rs: ResultSet): Category {
@@ -69,11 +61,16 @@ class CategoryTable(connection: Connection) : ItemTable<Category>(connection) {
             }
         }
     }
+}
 
-    companion object {
-        val NAME = "category_table"
-        private val SUBS = "subs"
+class CategoryJavaRepository(val connection: Connection) : CategoryDbRepository {
+    override val categoryTable: CategoryTable = CategoryJavaTable(connection)
+    override val allCategoryAbsoluteTable = MonthStatisticJavaTable("all_categories_absolute", connection).apply { create() }
+    override val allCategoryDeltaTable = MonthStatisticJavaTable("all_categories_delta", connection).apply { create() }
+
+    override fun getTable(name: String): MonthStatisticTable {
+        val table = MonthStatisticJavaTable(name, connection)
+        table.create()
+        return table
     }
-
-
 }

@@ -1,5 +1,6 @@
 package model
 
+import com.koenig.commonModel.Family
 import com.koenig.commonModel.User
 
 import java.sql.Connection
@@ -11,6 +12,10 @@ interface ConnectionService {
     @Throws(SQLException::class)
     fun getConnectionFromUser(userId: String): Connection
 
+    fun getConnectionFromFamilyId(familyId: String): Connection
+
     @Throws(SQLException::class)
-    fun getUser(userId: String): User
+    fun getUser(userId: String): User?
+
+    fun getFamilyFromUserId(userId: String): Family?
 }

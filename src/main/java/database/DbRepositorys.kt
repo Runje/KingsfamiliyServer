@@ -58,3 +58,4 @@ class StandingOrderDbRepository(val standingOrderTable: StandingOrderTable) : St
 }
 
 class BankAccountDbRepository(val bankAccountTable: BankAccountTable) : BankAccountRepository, DbRepository<BankAccount>(bankAccountTable)
+
