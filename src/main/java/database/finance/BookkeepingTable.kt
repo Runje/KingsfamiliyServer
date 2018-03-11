@@ -14,7 +14,7 @@ import java.util.*
 abstract class BookkeepingTable<T : BookkeepingEntry>(connection: Connection) : ItemTable<T>(connection) {
 
 
-    override val tableSpecificCreateStatement: String
+    override val itemSpecificCreateStatement: String
         get() = (", "
                 + CATEGORY + " TEXT,"
                 + SUBCATEGORY + " TEXT,"

@@ -20,7 +20,7 @@ class FamilyTable(connection: Connection, private val userService: (String) -> U
     override val tableName: String
         get() = NAME
 
-    override val tableSpecificCreateStatement: String
+    override val itemSpecificCreateStatement: String
         get() = ", $USERS TEXT , $START_MONTH INT"
 
     override val columnNames: List<String>

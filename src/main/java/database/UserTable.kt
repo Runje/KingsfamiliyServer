@@ -15,7 +15,7 @@ class UserTable(connection: Connection) : ItemTable<User>(connection) {
     override val tableName: String
         get() = NAME
 
-    override val tableSpecificCreateStatement: String
+    override val itemSpecificCreateStatement: String
         get() = ", " +
                 ABBREVIATION + " TEXT," +
                 FAMILY_NAME + " TEXT," +

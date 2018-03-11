@@ -11,7 +11,7 @@ abstract class TransactionTable(connection: Connection) : ItemTable<TransactionI
     override val columnNames: List<String>
         get() = ArrayList()
 
-    override val tableSpecificCreateStatement: String
+    override val itemSpecificCreateStatement: String
         get() = ""
 
     override fun getItem(rs: ResultSet): TransactionID {

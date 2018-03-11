@@ -17,7 +17,7 @@ class BankAccountTable(connection: Connection, private val userService: (String)
         get() = NAME
 
 
-    override val tableSpecificCreateStatement: String
+    override val itemSpecificCreateStatement: String
         get() = ", $BANK TEXT, $BALANCES BLOB, $OWNERS TEXT"
 
 

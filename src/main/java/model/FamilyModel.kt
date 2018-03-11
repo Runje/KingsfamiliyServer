@@ -34,10 +34,16 @@ class FamilyModel : OnReceiveMessageListener {
     fun start(userDatabase: UserDatabase) {
         logger.info("Start")
         this.userDatabase = userDatabase
+        userDatabase.start()
+        addKings()
         familyConnectionService = FamilyConnectionService(this.userDatabase)
         financeModel = FinanceModel(server, familyConnectionService, userDatabase.userService, FamilyDbRepository(this.userDatabase.familyTable))
-        userDatabase.start()
         server.start()
+
+
+    }
+
+    private fun addKings() {
         val thomasId = "c572d4e7-da4b-41d8-9c1f-7e9a97657155"
         val thomas = this.userDatabase.getUserById(thomasId)
         val userthomas = User(thomasId, "Thomas", "König", DateTime(1987, 6, 14, 12, 0))
@@ -58,7 +64,6 @@ class FamilyModel : OnReceiveMessageListener {
             users.add(userthomas)
             this.userDatabase.addFamily(Family("König", users, YearMonth(2015, 1)), thomasId)
         }
-
     }
 
 

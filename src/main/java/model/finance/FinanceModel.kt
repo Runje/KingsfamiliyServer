@@ -30,6 +30,7 @@ class FinanceModel(private val server: Server, private val connectionService: Co
 
     init {
         val thomasId = "c572d4e7-da4b-41d8-9c1f-7e9a97657155"
+        val milenaId = "c6540de0-46bb-42cd-939b-ce52677fa19d"
         val database = getFinanceDatabaseFromUser(thomasId)
         // TEST CODE
         if (database.allCategorys.isEmpty() && !conversionStarted) {
@@ -37,7 +38,7 @@ class FinanceModel(private val server: Server, private val connectionService: Co
             // convert only if not converted yet
 
             val thomas = connectionService.getUser(thomasId)
-            val milenaId = "c6540de0-46bb-42cd-939b-ce52677fa19d"
+
             val milena = connectionService.getUser(milenaId)
             database.convert(milena!!, thomas!!)
         }

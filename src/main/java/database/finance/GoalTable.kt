@@ -15,7 +15,7 @@ class GoalTable(connection: Connection) : ItemTable<Goal>(connection) {
     override val columnNames: MutableList<String>
         get () = listOf<String>(COLUMN_GOALS, COLUMN_USER_ID).toMutableList()
 
-    override val tableSpecificCreateStatement: String
+    override val itemSpecificCreateStatement: String
         get() = ", $COLUMN_GOALS BLOB, $COLUMN_USER_ID TEXT"
 
 

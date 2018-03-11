@@ -24,12 +24,12 @@ import java.sql.SQLException
 class FinanceDatabase @Throws(SQLException::class)
 constructor(connection: Connection, userService: (String) -> User?, val family: Family) : Database(connection) {
 
-    val goalTable: GoalTable
-    val bankAccountTable: BankAccountTable = BankAccountTable(connection, userService)
-    val transactionTable: FinanceTransactionTable
-    val expensesTable: ExpensesTable = ExpensesTable(connection)
-    val standingOrderTable: StandingOrderTable
-    val categoryTable: CategoryJavaTable
+    val goalTable: GoalTable = GoalTable(connection).apply { create() }
+    val bankAccountTable: BankAccountTable = BankAccountTable(connection, userService).apply { create() }
+    val transactionTable: FinanceTransactionTable = FinanceTransactionTable(connection).apply { create() }
+    val expensesTable: ExpensesTable = ExpensesTable(connection).apply { create() }
+    val standingOrderTable: StandingOrderTable = StandingOrderTable(connection).apply { create() }
+    val categoryTable: CategoryJavaTable = CategoryJavaTable(connection).apply { create() }
     val assetsCalculator = AssetsCalculator(bankAccountTable, Observable.just(family.startMonth), Observable.just(YearMonth()), AssetsJavaRepository(connection, BankAccountDbRepository(bankAccountTable)))
     val categoryCalculator = CategoryCalculator(expensesTable, CategoryJavaRepository(connection), Observable.just(YearMonth()))
     val allExpenses: List<Expenses>
@@ -41,17 +41,12 @@ constructor(connection: Connection, userService: (String) -> User?, val family: 
         get() = categoryTable.toItemList(categoryTable.all)
 
     init {
-        standingOrderTable = StandingOrderTable(connection)
-        categoryTable = CategoryJavaTable(connection)
-        transactionTable = FinanceTransactionTable(connection)
-        goalTable = GoalTable(connection)
         tables.add(expensesTable)
         tables.add(standingOrderTable)
         tables.add(categoryTable)
         tables.add(transactionTable)
         tables.add(bankAccountTable)
         tables.add(goalTable)
-        createAllTables()
     }
 
     @Throws(SQLException::class)
