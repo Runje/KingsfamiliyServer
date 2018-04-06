@@ -241,7 +241,7 @@ abstract class ItemTable<T : Item>(connection: Connection) : JavaTable<DatabaseI
 
     fun getWith(condition: String, setter: (NamedParameterStatement) -> Unit): List<DatabaseItem<T>> {
         return runInLockWithResult {
-            val selectQuery = "SELECT * FROM " + tableName + " WHERE " + DatabaseItemTable.COLUMN_DELETED + " = ? AND " + condition
+            val selectQuery = "SELECT * FROM " + tableName + " WHERE " + getNamedParameter(DatabaseItemTable.COLUMN_DELETED) + " AND " + condition
             val statement = NamedParameterStatement(connection, selectQuery)
             statement.setInt(DatabaseItemTable.COLUMN_DELETED, DatabaseItemTable.FALSE)
             setter.invoke(statement)

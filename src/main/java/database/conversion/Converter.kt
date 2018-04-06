@@ -7,6 +7,7 @@ import com.koenig.commonModel.User
 import com.koenig.commonModel.database.DatabaseItem
 import com.koenig.commonModel.finance.*
 import com.koenig.commonModel.finance.features.StandingOrderExecutor
+import com.koenig.commonModel.finance.features.getExecutionDatesUntil
 import database.ExpensesDbRepository
 import database.StandingOrderDbRepository
 import database.finance.BankAccountTable
@@ -14,6 +15,7 @@ import database.finance.CategoryJavaTable
 import database.finance.ExpensesTable
 import database.finance.StandingOrderTable
 import org.joda.time.DateTime
+import org.joda.time.Days
 import org.joda.time.LocalDate
 import org.slf4j.LoggerFactory
 import java.sql.Connection
@@ -61,13 +63,27 @@ class Converter(internal var expensesTable: ExpensesTable, internal var standing
             i = 0
             var lastDate = DateTime(0)
             for (lga in lgaExpenses) {
+                var isDuplicate = false
+                val isStandingOrder = lga.isStandingOrder
+                if (isStandingOrder) {
+                    expensesTable.getFromName(lga.name).forEach {
+                        // if dates are in a 5 day interval and is standing order
+                        if (Math.abs(Days.daysBetween(it.day, lga.date.toLocalDate()).days) <= 5 && it.standingOrder.isNotBlank()) {
+                            isDuplicate = true
+                            logger.warn("Found duplicates: $it AND ${lga}")
+                        }
+                    }
+                }
+
+                if (isDuplicate) continue
                 val expensesDatabaseItem = convert(lga)
                 // must be in the right order (ascending date)
                 check(!lga.date.isBefore(lastDate))
                 lastDate = lga.date
-                // TODO: deleteFrom duplicates(same name, same date, same value
+
+
                 // only add if not deleted or deleted and is standing order and add no "ausgleichs"
-                if ((!expensesDatabaseItem.isDeleted || !expensesDatabaseItem.item.standingOrder.isBlank()) && lga.name != "Ausgleich") {
+                if ((!expensesDatabaseItem.isDeleted || isStandingOrder) && lga.name != "Ausgleich") {
                     expensesTable.add(expensesDatabaseItem)
                 }
                 i++
@@ -170,7 +186,7 @@ class Converter(internal var expensesTable: ExpensesTable, internal var standing
         when (category) {
             "Transportmittel" -> subcategory = "Ford Focus"
 
-            "Arbeit" -> subcategory = if (name == "Gehalt") "Gehalt" else "Geschäftsreise"
+            "Arbeit" -> subcategory = if (name.contains("Gehalt")) "Gehalt" else "Geschäftsreise"
             "" -> newcategory = "Sonstiges"
             "Lebensmittel" -> {
                 newcategory = "Unterhaltskosten"
@@ -264,12 +280,18 @@ class Converter(internal var expensesTable: ExpensesTable, internal var standing
                 // ASSUMPTION: expenses are sorted!
                 // calc id from last expenses
                 expenses.id = calcUuidFrom(standingOrders[0].lastExecutedExpenses ?: standingOrders[0].id)
-                standingOrderTable.addExpensesToStandingOrders(id, expenses.id, lgaExpenses.date.toLocalDate())
+                val executionDate = calcNearestDueDateTo(lgaExpenses.date.toLocalDate(), standingOrders[0])
+                standingOrderTable.addExpensesToStandingOrders(id, expenses.id, executionDate)
             }
         }
 
 
         return DatabaseItem(expenses, insertDate, modifiedDate, deleted, insertId, modifiedId)
+    }
+
+    private fun calcNearestDueDateTo(day: LocalDate, standingOrder: StandingOrder): LocalDate {
+        val dates = standingOrder.getExecutionDatesUntil(LocalDate())
+        return dates.minBy { Math.abs(Days.daysBetween(it, day).days) }!!
     }
 
     private fun calcCostDistribution(who: String, user: String, costsInCent: Int, isTransaction: Boolean): CostDistribution {

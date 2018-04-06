@@ -24,7 +24,7 @@ import java.sql.SQLException
 import java.util.concurrent.TimeUnit
 
 
-class FinanceModel(private val server: Server, private val connectionService: ConnectionService, private val userService: (String) -> User?, private val familyRepository: FamilyRepository) {
+class FinanceModel(private val server: Server, private val connectionService: ConnectionService, private val userService: (String) -> User?, private val familyRepository: FamilyRepository, convert: Boolean = true) {
     private var conversionStarted: Boolean = false
     private val lastExecution = LocalDate(0)
 
@@ -33,7 +33,7 @@ class FinanceModel(private val server: Server, private val connectionService: Co
         val milenaId = "c6540de0-46bb-42cd-939b-ce52677fa19d"
         val database = getFinanceDatabaseFromUser(thomasId)
         // TEST CODE
-        if (database.allCategorys.isEmpty() && !conversionStarted) {
+        if (convert && database.allCategorys.isEmpty() && !conversionStarted) {
             conversionStarted = true
             // convert only if not converted yet
 
@@ -81,7 +81,9 @@ class FinanceModel(private val server: Server, private val connectionService: Co
     }
 
     private fun getConfigFromFamily(family: Family): FinanceConfig {
-        return FinanceServerConfig(family, FamilyConstants.OVERALL_STRING, FamilyConstants.FUTURE_STRING, FamilyConstants.COMPENSATION_NAME, FamilyConstants.COMPENSATION_CATEGORY)
+        val config = FinanceServerConfig(family, FamilyConstants.OVERALL_STRING, FamilyConstants.FUTURE_STRING, FamilyConstants.COMPENSATION_NAME, FamilyConstants.COMPENSATION_CATEGORY)
+        config.init()
+        return config
     }
 
     private val logger = LoggerFactory.getLogger(javaClass.simpleName)
@@ -109,11 +111,11 @@ class FinanceModel(private val server: Server, private val connectionService: Co
             var updatesMessage: UpdatesMessage<*>? = null
             val financeDatabaseFromUser = getFinanceDatabaseFromUser(userId)
             when (updateType) {
-                ItemType.EXPENSES -> updatesMessage = UpdatesMessage(financeDatabaseFromUser.getExpensesChangesSince(lastSyncDate))
-                ItemType.STANDING_ORDER -> updatesMessage = UpdatesMessage(financeDatabaseFromUser.getStandingOrderChangesSince(lastSyncDate))
-                ItemType.CATEGORY -> updatesMessage = UpdatesMessage(financeDatabaseFromUser.getCategorysChangesSince(lastSyncDate))
-                ItemType.BANKACCOUNT -> updatesMessage = UpdatesMessage(financeDatabaseFromUser.getBankAccountsChangesSince(lastSyncDate))
-                ItemType.GOAL -> updatesMessage = UpdatesMessage(financeDatabaseFromUser.getGoalChangesSince(lastSyncDate))
+                ItemType.EXPENSES -> updatesMessage = UpdatesMessage(financeDatabaseFromUser.getExpensesChangesSince(lastSyncDate).toMutableList())
+                ItemType.STANDING_ORDER -> updatesMessage = UpdatesMessage(financeDatabaseFromUser.getStandingOrderChangesSince(lastSyncDate).toMutableList())
+                ItemType.CATEGORY -> updatesMessage = UpdatesMessage(financeDatabaseFromUser.getCategorysChangesSince(lastSyncDate).toMutableList())
+                ItemType.BANKACCOUNT -> updatesMessage = UpdatesMessage(financeDatabaseFromUser.getBankAccountsChangesSince(lastSyncDate).toMutableList())
+                ItemType.GOAL -> updatesMessage = UpdatesMessage(financeDatabaseFromUser.getGoalChangesSince(lastSyncDate).toMutableList())
                 else -> logger.error("Unknown item type $updateType")
             }
 

@@ -45,7 +45,7 @@ class ExpensesTable(connection: Connection) : BookkeepingTable<Expenses>(connect
 
     val compensations: Map<LocalDate, Expenses>
         get() {
-            val list = getWith("$COMPENSATION = ?", { it.setBoolean(COMPENSATION, true) })
+            val list = getWith(getNamedParameter(COMPENSATION), { it.setBoolean(COMPENSATION, true) })
             val map = mutableMapOf<LocalDate, Expenses>()
             list.forEach { map[it.item.day] = it.item }
             return map

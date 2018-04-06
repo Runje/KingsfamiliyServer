@@ -31,13 +31,13 @@ class FamilyModel : OnReceiveMessageListener {
     private lateinit var financeModel: FinanceModel
 
     @Throws(SQLException::class)
-    fun start(userDatabase: UserDatabase) {
+    fun start(userDatabase: UserDatabase, convert: Boolean = true) {
         logger.info("Start")
         this.userDatabase = userDatabase
         userDatabase.start()
         addKings()
         familyConnectionService = FamilyConnectionService(this.userDatabase)
-        financeModel = FinanceModel(server, familyConnectionService, userDatabase.userService, FamilyDbRepository(this.userDatabase.familyTable))
+        financeModel = FinanceModel(server, familyConnectionService, userDatabase.userService, FamilyDbRepository(this.userDatabase.familyTable), convert)
         server.start()
 
 
@@ -109,10 +109,10 @@ class FamilyModel : OnReceiveMessageListener {
 
     private fun processCommands(text: String, fromId: String) {
         val words = text.split(FamilyMessage.SEPARATOR.toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-        var familyName = words[1].trim { it <= ' ' }
+
         when (words[0]) {
             FamilyTextMessages.CREATE_FAMILY -> {
-
+                val familyName = words[1].trim { it <= ' ' }
                 logger.info("Creating new family: $familyName")
                 if (createNewFamily(familyName, fromId)) {
                     logger.info("Created new family: $familyName")
@@ -120,7 +120,7 @@ class FamilyModel : OnReceiveMessageListener {
                 }
             }
             FamilyTextMessages.JOIN_FAMILY -> {
-                familyName = words[1].trim { it <= ' ' }
+                val familyName = words[1].trim { it <= ' ' }
                 joinFamily(familyName, fromId)
             }
 
@@ -134,7 +134,7 @@ class FamilyModel : OnReceiveMessageListener {
     private fun sendFamilyMembers(userId: String) {
         try {
             val users = userDatabase.getFamilyMemberFrom(userId)
-            server.sendMessage(FamilyMemberMessage(users), userId)
+            server.sendMessage(FamilyMemberMessage(users.toMutableList()), userId)
         } catch (e: SQLException) {
             logger.error(e.message)
             sendFamilyCommand(FamilyTextMessages.GET_FAMILY_MEMBER_FAIL, userId)

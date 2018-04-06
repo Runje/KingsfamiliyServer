@@ -28,7 +28,8 @@ class FinanceServerConfig(val family: Family, override val overallString: String
     }
 
     override fun loadUserId(): String {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        // should not be used in server
+        return ""
     }
 
     override fun loadFamilyMembers(): List<User> {
@@ -40,14 +41,14 @@ class FinanceServerConfig(val family: Family, override val overallString: String
     }
 
     override fun saveUserId(userId: String) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+
     }
 
     override fun saveStartDate(date: YearMonth) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+
     }
 
     override fun saveFamilyMembers(members: List<User>) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+
     }
 }

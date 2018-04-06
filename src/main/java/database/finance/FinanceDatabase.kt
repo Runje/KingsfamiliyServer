@@ -54,7 +54,7 @@ constructor(connection: Connection, userService: (String) -> User?, val family: 
         logger.info("Starting conversion...")
 
         val converter = Converter(expensesTable, standingOrderTable, categoryTable, bankAccountTable, milena, thomas)
-        converter.convert("D:\\Bibliotheken\\Dokumente\\finances_db_backup_2018.01.30.sqlite")
+        converter.convert("D:\\Bibliotheken\\Dokumente\\finances_db_backup_2018.03.24.sqlite")
     }
 
     @Throws(SQLException::class)

@@ -39,7 +39,7 @@ class NewUser {
         val connection = DriverManager.getConnection("jdbc:sqlite:$DB_TEST_NAME")
         database = UserDatabase(connection)
         model = FamilyModel()
-        model!!.start(database!!)
+        model!!.start(database!!, false)
 
         database!!.deleteAllEntrys()
 

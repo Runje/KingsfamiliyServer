@@ -43,7 +43,7 @@ public class Server extends SocketChannelTCPServer implements OnReceiveBytesFrom
     public synchronized void onReceiveBytes(byte[] bytes, SocketChannel socketChannel)
     {
         logger.info("Receive bytes: " + bytes.length);
-        FamilyMessage msg = Parser.parse(ByteBuffer.wrap(bytes));
+        FamilyMessage msg = Parser.INSTANCE.parse(ByteBuffer.wrap(bytes));
         String name = msg.getName();
         Client client = findClient(socketChannel);
         client.id = msg.getFromId();
